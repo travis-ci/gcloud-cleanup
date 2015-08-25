@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 HERE="$(dirname ${BASH_SOURCE[0]})"
-PATH="$HERE/buildpacked/bin:$PATH"
+PATH="$HERE/google-cloud-sdk/bin:$PATH"
+
+find $HERE -name gcloud
 
 while true ; do
   gcloud compute instances list --format json | \
