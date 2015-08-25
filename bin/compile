@@ -71,4 +71,4 @@ if ! test -f $CACHE_DIR/.profile.d/homebin.sh ; then
 fi
 
 echo -n "-----> Syncing cache dir to build dir"
-rsync -avz $CACHE_DIR/ $BUILD_DIR/ | indent
+rsync -az $CACHE_DIR/ $BUILD_DIR/ | indent
