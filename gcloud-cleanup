@@ -3,15 +3,23 @@
 HERE="$(dirname ${BASH_SOURCE[0]})"
 PATH="$HERE/google-cloud-sdk/bin:$PATH"
 
-find $HERE -name gcloud
-
 while true ; do
+  TERMINST_TMP=$(mktemp /var/tmp/gcloud-cleanup.XXXXX)
+
   gcloud compute instances list --format json | \
-    jq -r '.[] | select(.status == "TERMINATED") | .name' | \
-    xargs gcloud compute instances delete \
-      --zone ${GCLOUD_ZONE:-us-central1-f} \
-      --verbosity ${GCLOUD_VERBOSITY:-debug} \
-      -q \
-      --log-http ${GCLOUD_LOG_HTTP:-true}
+    jq -r '.[] | select(.status == "TERMINATED") | .name' > $TERMINST_TMP
+
+  if [[ -s $TERMINST_TMP ]] ; then
+    cat $TERMINST_TMP | \
+      xargs gcloud compute instances delete \
+        --zone ${GCLOUD_ZONE:-us-central1-f} \
+        --verbosity ${GCLOUD_VERBOSITY:-debug} \
+        -q \
+        --log-http ${GCLOUD_LOG_HTTP:-true}
+  else
+    echo Skipping
+  fi
+
+  rm -f $TERMINST_TMP
   sleep ${GCLOUD_CLEANUP_LOOP_SLEEP:-10}
 done
