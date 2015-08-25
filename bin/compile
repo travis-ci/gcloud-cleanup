@@ -40,7 +40,7 @@ cp -v $CACHE_DIR/jq $BUILD_DIR/bin/jq
 
 if test -f $BUILD_DIR/google-cloud-sdk/path.bash.inc ; then
   source $BUILD_DIR/google-cloud-sdk/path.bash.inc
-  ln -sv $BUILD_DIR/google-cloud-sdk/path.bash.inc $BUILD_DIR/.profile.d/gcloud.sh
+  cp -v $BUILD_DIR/google-cloud-sdk/path.bash.inc $BUILD_DIR/.profile.d/gcloud.sh
 fi
 
 echo 'PATH=$PATH:$HOME/bin' > $BUILD_DIR/.profile.d/homebin.sh
