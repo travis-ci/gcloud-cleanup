@@ -48,7 +48,11 @@ if test -f $ENV_DIR/GCLOUD_PROJECT ; then
   export GCLOUD_PROJECT="$(cat $ENV_DIR/GCLOUD_PROJECT)"
 fi
 
-gcloud auth login \
+if test -f $ENV_DIR/GCLOUD_OAUTH_TOKEN ; then
+  export GCLOUD_OAUTH_TOKEN="$(cat $ENV_DIR/GCLOUD_OAUTH_TOKEN)"
+fi
+
+echo "${GCLOUD_OAUTH_TOKEN}" | gcloud auth login \
   --project "${GCLOUD_PROJECT}" \
   -q \
   --no-launch-browser
