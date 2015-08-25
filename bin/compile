@@ -21,7 +21,10 @@ if ! command -v gcloud ; then
   export CLOUDSDK_CORE_DISABLE_PROMPTS=1
   export CLOUDSDK_INSTALL_DIR=$BUILD_DIR
   export CLOUDSDK_ROOT_DIR=$BUILD_DIR
+  OLDHOME="$HOME"
+  export HOME="$BUILD_DIR"
   curl -sL https://dl.google.com/dl/cloudsdk/release/install_google_cloud_sdk.bash | bash
+  export HOME="$OLDHOME"
 fi
 
 if ! test -f $CACHE_DIR/jq ; then
@@ -32,9 +35,10 @@ fi
 cp -v $CACHE_DIR/jq $BUILD_DIR/bin/jq
 
 if test -f $BUILD_DIR/google-cloud-sdk/path.bash.inc ; then
+  source $BUILD_DIR/google-cloud-sdk/path.bash.inc
   ln -sv $BUILD_DIR/google-cloud-sdk/path.bash.inc $BUILD_DIR/.profile.d/gcloud.sh
 fi
 
 echo 'PATH=$PATH:$HOME/bin' > $BUILD_DIR/.profile.d/homebin.sh
 
-gcloud auth login --no-launch-browser
+PATH="$BUILD_DIR/google-cloud-sdk/bin:$PATH" gcloud auth login --no-launch-browser
