@@ -13,11 +13,11 @@ while true ; do
     cat $TERMINST_TMP | \
       xargs gcloud compute instances delete \
         --zone ${GCLOUD_ZONE:-us-central1-f} \
-        --verbosity ${GCLOUD_VERBOSITY:-debug} \
+        --verbosity ${GCLOUD_VERBOSITY:-info} \
         -q \
         --log-http ${GCLOUD_LOG_HTTP:-true}
   else
-    echo Skipping
+    echo msg="nothing to clean up, skipping"
   fi
 
   rm -f $TERMINST_TMP
