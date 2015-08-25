@@ -3,6 +3,18 @@
 
 set -eo pipefail
 
+indent() {
+  # if an arg is given it's a flag indicating we shouldn't indent the first
+  # line, so use :+ to tell SED accordingly if that parameter is set, otherwise
+  # null string for no range selector prefix (it selects from line 2 onwards and
+  # then every 1st line, meaning all lines)
+  c="${1:+"2,999"} s/^/       /"
+  case $(uname) in
+    Darwin) sed -l "$c";; # mac/bsd sed: -l buffers on line boundaries
+    *)      sed -u "$c";; # unix/gnu sed: -u unbuffered (arbitrary) chunks of data
+  esac
+}
+
 mkdir -p "$1" "$2" "$3"
 
 BUILD_DIR=$(cd "$1/" && pwd)
@@ -16,11 +28,16 @@ mkdir -p $BUILD_DIR/bin $CACHE_DIR/bin $BUILD_DIR/.profile.d $CACHE_DIR/.profile
 PATH="$PATH:$BUILD_DIR/bin"
 
 if ! test -d $CACHE_DIR/google-cloud-sdk ; then
+  echo -n "-----> Installing Google Cloud SDK..."
   export CLOUDSDK_CORE_DISABLE_PROMPTS=1
   export CLOUDSDK_INSTALL_DIR=$CACHE_DIR
   export CLOUDSDK_ROOT_DIR=$CACHE_DIR
   export HOME="$CACHE_DIR"
-  curl -sL https://dl.google.com/dl/cloudsdk/release/install_google_cloud_sdk.bash | bash
+
+  curl -sL \
+    https://dl.google.com/dl/cloudsdk/release/install_google_cloud_sdk.bash | \
+    bash | \
+    indent
 
   if test -f $ENV_DIR/GCLOUD_PROJECT ; then
     export GCLOUD_PROJECT="$(cat $ENV_DIR/GCLOUD_PROJECT)"
@@ -35,9 +52,11 @@ if ! test -d $CACHE_DIR/google-cloud-sdk ; then
   echo "${GCLOUD_OAUTH_TOKEN}" | gcloud auth login \
     --project "${GCLOUD_PROJECT}" \
     -q \
-    --no-launch-browser
+    --no-launch-browser | indent
 
-  cp -v $CACHE_DIR/google-cloud-sdk/path.bash.inc $CACHE_DIR/.profile.d/gcloud.sh
+  cp -v \
+    $CACHE_DIR/google-cloud-sdk/path.bash.inc \
+    $CACHE_DIR/.profile.d/gcloud.sh | indent
 
   export HOME="$OLDHOME"
 fi
@@ -51,4 +70,5 @@ if ! test -f $CACHE_DIR/.profile.d/homebin.sh ; then
   echo 'PATH=$PATH:$HOME/bin' > $CACHE_DIR/.profile.d/homebin.sh
 fi
 
-rsync -avz $CACHE_DIR/ $BUILD_DIR/
+echo -n "-----> Syncing cache dir to build dir"
+rsync -avz $CACHE_DIR/ $BUILD_DIR/ | indent

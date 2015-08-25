@@ -17,7 +17,7 @@ while true ; do
         -q \
         --log-http ${GCLOUD_LOG_HTTP:-true}
   else
-    echo msg="nothing to clean up, skipping"
+    echo msg=\"nothing to clean up, skipping\"
   fi
 
   rm -f $TERMINST_TMP
