@@ -1,0 +1,35 @@
+#!/bin/bash
+# usage: bin/compile <build-dir> <cache-dir> <env-dir>
+
+set -eo pipefail
+
+mkdir -p "$1" "$2"
+
+BUILD_DIR=$(cd "$1/" && pwd)
+CACHE_DIR=$(cd "$2/" && pwd)
+BUILDPACK_DIR=$(dirname $(dirname $0))
+
+mkdir -p $BUILD_DIR/bin
+
+PATH="$PATH:$BUILD_DIR/bin"
+if test -f $BUILD_DIR/google-cloud-sdk/path.bash.inc ; then
+  . $BUILD_DIR/google-cloud-sdk/path.bash.inc
+fi
+
+if ! command -v gcloud ; then
+  export CLOUDSDK_CORE_DISABLE_PROMPTS=1
+  export CLOUDSDK_ROOT_DIR=$BUILD_DIR
+  curl -s https://sdk.cloud.google.com | bash
+fi
+
+if ! test -f $CACHE_DIR/jq ; then
+  curl -sSL -o $CACHE_DIR/jq \
+    https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+fi
+
+cp -v $CACHE_DIR/jq $BUILD_DIR/bin/jq
+
+ln -sv $BUILD_DIR/google-cloud-sdk/path.bash.inc $BUILD_DIR/.profile.d/gcloud.sh
+echo 'PATH=$PATH:$HOME/bin' > $BUILD_DIR/.profile.d/homebin.sh
+
+gcloud auth login
