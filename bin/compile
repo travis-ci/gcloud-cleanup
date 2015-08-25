@@ -10,6 +10,7 @@ CACHE_DIR=$(cd "$2/" && pwd)
 BUILDPACK_DIR=$(dirname $(dirname $0))
 
 mkdir -p $BUILD_DIR/bin
+mkdir -p $BUILD_DIR/.profile.d
 
 PATH="$PATH:$BUILD_DIR/bin"
 if test -f $BUILD_DIR/google-cloud-sdk/path.bash.inc ; then
@@ -30,7 +31,10 @@ fi
 
 cp -v $CACHE_DIR/jq $BUILD_DIR/bin/jq
 
-ln -sv $BUILD_DIR/google-cloud-sdk/path.bash.inc $BUILD_DIR/.profile.d/gcloud.sh
+if test -f $BUILD_DIR/google-cloud-sdk/path.bash.inc ; then
+  ln -sv $BUILD_DIR/google-cloud-sdk/path.bash.inc $BUILD_DIR/.profile.d/gcloud.sh
+fi
+
 echo 'PATH=$PATH:$HOME/bin' > $BUILD_DIR/.profile.d/homebin.sh
 
-gcloud auth login
+gcloud auth login --no-launch-browser
