@@ -3,10 +3,11 @@
 
 set -eo pipefail
 
-mkdir -p "$1" "$2"
+mkdir -p "$1" "$2" "$3"
 
 BUILD_DIR=$(cd "$1/" && pwd)
 CACHE_DIR=$(cd "$2/" && pwd)
+ENV_DIR=$(cd "$3/" && pwd)
 BUILDPACK_DIR=$(dirname $(dirname $0))
 
 mkdir -p $BUILD_DIR/bin
@@ -41,4 +42,13 @@ fi
 
 echo 'PATH=$PATH:$HOME/bin' > $BUILD_DIR/.profile.d/homebin.sh
 
-PATH="$BUILD_DIR/google-cloud-sdk/bin:$PATH" gcloud auth login --no-launch-browser
+PATH="$BUILD_DIR/google-cloud-sdk/bin:$PATH"
+
+if test -f $ENV_DIR/GCLOUD_PROJECT ; then
+  export GCLOUD_PROJECT="$(cat $ENV_DIR/GCLOUD_PROJECT)"
+fi
+
+gcloud auth login \
+  --project "${GCLOUD_PROJECT}" \
+  -q \
+  --no-launch-browser
