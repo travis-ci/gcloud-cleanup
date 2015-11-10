@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+log(){
+  msg=$1
+  shift
+  echo date=$(date -u +%Y-%m-%dT%H:%M:%S) level=info msg=\"$msg\" $*
+}

@@ -3,10 +3,14 @@
 HERE="$(dirname ${BASH_SOURCE[0]})"
 PATH="$HERE/google-cloud-sdk/bin:$PATH"
 
+: ${GCLOUD_READ_EXE:=${HERE}/google-cloud-sdk/bin/gcloud}
+: ${GCLOUD_WRITE_EXE:=${HERE}/google-cloud-sdk/bin/gcloud}
 : ${GCLOUD_ZONE:=us-central1-f}
 : ${GCLOUD_VERBOSITY:=info}
 : ${GCLOUD_LOG_HTTP:=true}
 : ${GCLOUD_CLEANUP_LOOP_SLEEP:=10}
+: ${GCLOUD_CLEANUP_IMAGE_LIMIT:=100}
+: ${JOB_BOARD_URL:=http://localhost:4567}
 
 cat <<EOF
 Starting up gcloud-cleanup with settings:
@@ -16,39 +20,29 @@ Starting up gcloud-cleanup with settings:
   GCLOUD_VERBOSITY=${GCLOUD_VERBOSITY}
   GCLOUD_LOG_HTTP=${GCLOUD_LOG_HTTP}
   GCLOUD_CLEANUP_LOOP_SLEEP=${GCLOUD_CLEANUP_LOOP_SLEEP}
+  GCLOUD_CLEANUP_IMAGE_LIMIT=${GCLOUD_CLEANUP_IMAGE_LIMIT}
 
 EOF
 
-echo -en "Active account: "
-gcloud auth list --format json | jq -r .active_account
+export GCLOUD_CLEANUP_IMAGE_LIMIT
+export GCLOUD_LOG_HTTP
+export GCLOUD_PROJECT
+export GCLOUD_READ_EXE
+export GCLOUD_VERBOSITY
+export GCLOUD_WRITE_EXE
+export GCLOUD_ZONE
+export JOB_BOARD_URL
 
-log() {
-  msg=$1
-  shift
-  echo date=$(date -u +%Y-%m-%dT%H:%M:%S) level=info msg=\"$msg\" $*
-}
+echo -en "Active account: "
+${GCLOUD_READ_EXE} auth list --format json | jq -r .active_account
+
+source "${HERE}/functions/log"
+source "${HERE}/functions/__delete_old_instances"
+source "${HERE}/functions/__delete_old_images"
 
 while true ; do
-  TERMINST_TMP=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
-
-  log 'fetching terminated instances'
-
-  gcloud compute instances list --format json | \
-    jq -r '.[] | select(.status == "TERMINATED") | .name' > ${TERMINST_TMP}
-
-  if [[ -s ${TERMINST_TMP} ]] ; then
-    cat ${TERMINST_TMP} | \
-      xargs gcloud compute instances delete \
-        --zone ${GCLOUD_ZONE} \
-        --verbosity ${GCLOUD_VERBOSITY} \
-        -q \
-        --log-http ${GCLOUD_LOG_HTTP}
-    log 'deleted instances' n=$(wc -l ${TERMINST_TMP} | awk '{ print $1 }')
-  else
-    log 'nothing to clean up, skipping'
-  fi
-
-  rm -f ${TERMINST_TMP}
+  __delete_old_instances
+  __delete_old_images
 
   log 'sleeping' seconds=${GCLOUD_CLEANUP_LOOP_SLEEP}
 

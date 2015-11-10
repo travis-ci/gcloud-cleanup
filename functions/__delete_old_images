@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+__delete_old_images() {
+  REGIMG_TMP=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
+  GCEIMG_TMP=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
+
+  log 'fetching GCE CI images'
+
+  ${GCLOUD_READ_EXE} compute images list \
+    --regexp 'travis-ci-.*' \
+    --format json \
+    --limit ${GCLOUD_CLEANUP_IMAGE_LIMIT} | \
+    jq -r '.[] | .name' | sort > ${GCEIMG_TMP}
+
+  log 'fetching registered CI images'
+
+  local params="infra=gce&name=^travis-ci-.*&fields\[images\]=name"
+  params="${params}&limit=${GCLOUD_CLEANUP_IMAGE_LIMIT}"
+
+  curl -sSL "${JOB_BOARD_URL}/images?${params}" | \
+    jq -r '.data | .[] | .name' | sort > ${REGIMG_TMP}
+
+  if [[ ! -s ${REGIMG_TMP} ]] ; then
+    log 'no registered images?'
+    rm -f ${REGIMG_TMP} ${GCEIMG_TMP}
+    return
+  fi
+
+  if [[ ! -s ${GCEIMG_TMP} ]] ; then
+    log 'no GCE images?'
+    rm -f ${REGIMG_TMP} ${GCEIMG_TMP}
+    return
+  fi
+
+  diff -u "${REGIMG_TMP}" "${GCEIMG_TMP}" | \
+    grep -vE '^(@|\+\+\+)' | grep '^+' | awk -F+ '/^+/ { print $2 }' | \
+    xargs ${GCLOUD_WRITE_EXE} compute images delete \
+      --zone ${GCLOUD_ZONE} \
+      --verbosity ${GCLOUD_VERBOSITY} \
+      -q \
+      --log-http ${GCLOUD_LOG_HTTP}
+
+  rm -f ${REGIMG_TMP} ${GCEIMG_TMP}
+}
