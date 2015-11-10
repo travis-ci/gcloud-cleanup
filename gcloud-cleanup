@@ -47,10 +47,10 @@ while true ; do
   __delete_old_instances
   __delete_old_images
 
-  log 'sleeping' seconds=${GCLOUD_CLEANUP_LOOP_SLEEP}
-
   if [[ ${GCLOUD_CLEANUP_ONCE} ]] ; then
     exit 0
   fi
+
+  log 'sleeping' seconds=${GCLOUD_CLEANUP_LOOP_SLEEP}
   sleep ${GCLOUD_CLEANUP_LOOP_SLEEP}
 done
