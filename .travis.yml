@@ -1,0 +1,15 @@
+language: bash
+
+env:
+  global:
+  - GCLOUD_CLEANUP_ONCE=1
+  - GCLOUD_WRITE_EXE='echo gcloud'
+
+install:
+- mkdir -p "${TRAVIS_BUILD_DIR}/.cache" "${TRAVIS_BUILD_DIR}/.env"
+
+script:
+- ./bin/detect "${TRAVIS_BUILD_DIR}" | grep gcloud-cleanup
+- ./bin/compile "${TRAVIS_BUILD_DIR}" "${TRAVIS_BUILD_DIR}/.cache" "${TRAVIS_BUILD_DIR}/.env"
+- ./bin/release "${TRAVIS_BUILD_DIR}" | grep '^---'
+- ./gcloud-cleanup

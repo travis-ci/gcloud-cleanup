@@ -9,6 +9,7 @@ PATH="$HERE/google-cloud-sdk/bin:$PATH"
 : ${GCLOUD_VERBOSITY:=info}
 : ${GCLOUD_LOG_HTTP:=true}
 : ${GCLOUD_CLEANUP_LOOP_SLEEP:=10}
+: ${GCLOUD_CLEANUP_ONCE:=}
 : ${GCLOUD_CLEANUP_IMAGE_LIMIT:=100}
 : ${JOB_BOARD_URL:=http://localhost:4567}
 
@@ -46,5 +47,8 @@ while true ; do
 
   log 'sleeping' seconds=${GCLOUD_CLEANUP_LOOP_SLEEP}
 
+  if [[ ${GCLOUD_CLEANUP_ONCE} ]] ; then
+    exit 0
+  fi
   sleep ${GCLOUD_CLEANUP_LOOP_SLEEP}
 done
