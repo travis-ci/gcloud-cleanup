@@ -41,6 +41,8 @@ source "${HERE}/functions/log"
 source "${HERE}/functions/__delete_old_instances"
 source "${HERE}/functions/__delete_old_images"
 
+set -o errexit
+
 while true ; do
   __delete_old_instances
   __delete_old_images
