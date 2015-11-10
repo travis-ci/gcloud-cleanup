@@ -33,7 +33,7 @@ __delete_old_images() {
   fi
 
   diff -u "${REGIMG_TMP}" "${GCEIMG_TMP}" | \
-    grep -vE '^(@|\+\+\+)' | grep '^+' | awk -F+ '/^+/ { print $2 }' | \
+    grep -vE '^(@|\+\+\+)' | grep '^+' | awk -F+ '/^\+/ { print $2 }' | \
     xargs ${GCLOUD_WRITE_EXE} compute images delete \
       --zone ${GCLOUD_ZONE} \
       --verbosity ${GCLOUD_VERBOSITY} \
