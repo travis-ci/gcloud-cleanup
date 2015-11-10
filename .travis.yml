@@ -1,5 +1,9 @@
 language: bash
 
+cache:
+  directories:
+  - "${TRAVIS_BUILD_DIR}/.cache"
+
 env:
   global:
   - GCLOUD_CLEANUP_ONCE=1
@@ -8,9 +12,11 @@ env:
 
 install:
 - mkdir -p "${TRAVIS_BUILD_DIR}/.cache" "${TRAVIS_BUILD_DIR}/.env"
-- echo '#!/usr/bin/env bash' > "${TRAVIS_BUILD_DIR}/.cache/gcloud-read"
-- echo 'echo "[]"' >> "${TRAVIS_BUILD_DIR}/.cache/gcloud-read"
-- chmod +x "${TRAVIS_BUILD_DIR}/.cache/gcloud-read"
+- if [[ ! -f "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ]] ; then
+    echo '#!/usr/bin/env bash' > "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ;
+    echo 'echo "[]"' >> "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ;
+    chmod +x "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ;
+  fi
 
 script:
 - ./bin/detect "${TRAVIS_BUILD_DIR}" | grep gcloud-cleanup
