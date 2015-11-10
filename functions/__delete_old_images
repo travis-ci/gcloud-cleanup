@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+__delete_old_images() {
+  local regimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
+  local gceimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
+  local delimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
+
+  log 'fetching GCE CI images'
+
+  ${GCLOUD_READ_EXE} compute images list \
+    --regexp 'travis-ci-.*' \
+    --format json \
+    --limit ${GCLOUD_CLEANUP_IMAGE_LIMIT} | \
+    jq -r '.[] | .name' | sort > ${gceimg_tmp}
+
+  log 'fetching registered CI images'
+
+  local params="infra=gce&name=^travis-ci-.*&fields\[images\]=name"
+  params="${params}&limit=${GCLOUD_CLEANUP_IMAGE_LIMIT}"
+
+  curl -sSL "${JOB_BOARD_URL}/images?${params}" | \
+    jq -r '.data | .[] | .name' | sort > ${regimg_tmp}
+
+  if [[ ! -s ${regimg_tmp} ]] ; then
+    log 'no registered images?'
+    rm -f ${regimg_tmp} ${gceimg_tmp}
+    return
+  fi
+
+  if [[ ! -s ${gceimg_tmp} ]] ; then
+    log 'no GCE images?'
+    rm -f ${regimg_tmp} ${gceimg_tmp}
+    return
+  fi
+
+  __set_diff "${regimg_tmp}" "${gceimg_tmp}" > "${delimg_tmp}"
+
+  if [[ -s ${delimg_tmp} ]] ; then
+    cat "${delimg_tmp}" | \
+      xargs -- ${GCLOUD_WRITE_EXE} compute images delete \
+        --verbosity=${GCLOUD_VERBOSITY} \
+        -q \
+        --${GCLOUD_LOG_HTTP}
+  fi
+
+  rm -f ${regimg_tmp} ${gceimg_tmp} ${delimg_tmp}
+}

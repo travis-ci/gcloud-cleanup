@@ -1,0 +1,26 @@
+language: bash
+
+cache:
+  directories:
+  - "${TRAVIS_BUILD_DIR}/.cache"
+
+env:
+  global:
+  - GCLOUD_CLEANUP_ONCE=1
+  - GCLOUD_WRITE_EXE='echo gcloud'
+  - GCLOUD_READ_EXE="${TRAVIS_BUILD_DIR}/.cache/gcloud-read"
+
+install:
+- mkdir -p "${TRAVIS_BUILD_DIR}/.cache" "${TRAVIS_BUILD_DIR}/.env"
+- if [[ ! -f "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ]] ; then
+    echo '#!/usr/bin/env bash' > "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ;
+    echo 'echo "[]"' >> "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ;
+    chmod +x "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ;
+  fi
+
+script:
+- ./bin/detect "${TRAVIS_BUILD_DIR}" | grep gcloud-cleanup
+- bash -n ./bin/compile
+- ./bin/release "${TRAVIS_BUILD_DIR}" | grep '^---'
+- export PATH="$TRAVIS_BUILD_DIR/google-cloud-sdk/bin:$PATH"
+- ./gcloud-cleanup
