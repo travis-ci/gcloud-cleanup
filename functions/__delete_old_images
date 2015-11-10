@@ -3,6 +3,7 @@
 __delete_old_images() {
   local regimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
   local gceimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
+  local delimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
 
   log 'fetching GCE CI images'
 
@@ -32,12 +33,15 @@ __delete_old_images() {
     return
   fi
 
-  __set_diff "${regimg_tmp}" "${gceimg_tmp}" | \
-    xargs ${GCLOUD_WRITE_EXE} compute images delete \
-      --zone ${GCLOUD_ZONE} \
-      --verbosity ${GCLOUD_VERBOSITY} \
-      -q \
-      --log-http ${GCLOUD_LOG_HTTP}
+  __set_diff "${regimg_tmp}" "${gceimg_tmp}" > "${delimg_tmp}"
 
-  rm -f ${regimg_tmp} ${gceimg_tmp}
+  if [[ -s ${delimg_tmp} ]] ; then
+    cat "${delimg_tmp}" | \
+      xargs -- ${GCLOUD_WRITE_EXE} compute images delete \
+        --verbosity=${GCLOUD_VERBOSITY} \
+        -q \
+        --${GCLOUD_LOG_HTTP}
+  fi
+
+  rm -f ${regimg_tmp} ${gceimg_tmp} ${delimg_tmp}
 }

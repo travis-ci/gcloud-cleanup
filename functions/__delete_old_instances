@@ -10,11 +10,11 @@ __delete_old_instances() {
 
   if [[ -s ${TERMINST_TMP} ]] ; then
     cat ${TERMINST_TMP} | \
-      xargs ${GCLOUD_WRITE_EXE} compute instances delete \
-        --zone ${GCLOUD_ZONE} \
-        --verbosity ${GCLOUD_VERBOSITY} \
+      xargs -- ${GCLOUD_WRITE_EXE} compute instances delete \
+        --zone=${GCLOUD_ZONE} \
+        --verbosity=${GCLOUD_VERBOSITY} \
         -q \
-        --log-http ${GCLOUD_LOG_HTTP}
+        --${GCLOUD_LOG_HTTP}
     log 'deleted instances' n=$(wc -l ${TERMINST_TMP} | awk '{ print $1 }')
   else
     log 'nothing to clean up, skipping'

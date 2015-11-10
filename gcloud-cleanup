@@ -7,7 +7,8 @@ PATH="$HERE/google-cloud-sdk/bin:$PATH"
 : ${GCLOUD_WRITE_EXE:=${HERE}/google-cloud-sdk/bin/gcloud}
 : ${GCLOUD_ZONE:=us-central1-f}
 : ${GCLOUD_VERBOSITY:=info}
-: ${GCLOUD_LOG_HTTP:=true}
+: ${GCLOUD_LOG_HTTP:=log-http}
+: ${GCLOUD_CLEANUP_ENTITIES:=instances images}
 : ${GCLOUD_CLEANUP_LOOP_SLEEP:=10}
 : ${GCLOUD_CLEANUP_ONCE:=}
 : ${GCLOUD_CLEANUP_IMAGE_LIMIT:=100}
@@ -20,6 +21,7 @@ Starting up gcloud-cleanup with settings:
   GCLOUD_ZONE=${GCLOUD_ZONE}
   GCLOUD_VERBOSITY=${GCLOUD_VERBOSITY}
   GCLOUD_LOG_HTTP=${GCLOUD_LOG_HTTP}
+  GCLOUD_CLEANUP_ENTITIES=${GCLOUD_CLEANUP_ENTITIES}
   GCLOUD_CLEANUP_LOOP_SLEEP=${GCLOUD_CLEANUP_LOOP_SLEEP}
   GCLOUD_CLEANUP_IMAGE_LIMIT=${GCLOUD_CLEANUP_IMAGE_LIMIT}
 
@@ -34,18 +36,23 @@ export GCLOUD_WRITE_EXE
 export GCLOUD_ZONE
 export JOB_BOARD_URL
 
-echo -en "Active account: "
-${GCLOUD_READ_EXE} auth list --format json | jq -r .active_account
-
-source "${HERE}/functions/log"
-source "${HERE}/functions/__delete_old_instances"
-source "${HERE}/functions/__delete_old_images"
+if [[ ${GCLOUD_CLEANUP_DEBUG} || ${DEBUG} ]] ; then
+  set -o xtrace
+fi
 
 set -o errexit
 
+echo -en "Active account: "
+${GCLOUD_READ_EXE} auth list --format json | jq -r .active_account
+
+for f in ${HERE}/functions/* ; do
+  source "$f"
+done
+
 while true ; do
-  __delete_old_instances
-  __delete_old_images
+  for entity in ${GCLOUD_CLEANUP_ENTITIES} ; do
+    __delete_old_${entity}
+  done
 
   if [[ ${GCLOUD_CLEANUP_ONCE} ]] ; then
     exit 0
