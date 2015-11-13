@@ -63,7 +63,7 @@ if ! test -d $CACHE_DIR/google-cloud-sdk ; then
 fi
 
 echo "-----> Updating gcloud components"
-$CACHE_DIR/google-cloud-sdk/bin/gcloud components update | indent
+$CACHE_DIR/google-cloud-sdk/bin/gcloud components update 2>&1 | indent
 
 if ! test -f $CACHE_DIR/bin/jq ; then
   curl -sSL -o $CACHE_DIR/bin/jq \
