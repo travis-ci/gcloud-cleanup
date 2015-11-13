@@ -15,17 +15,15 @@ __delete_old_images() {
 
   log 'fetching registered CI images'
 
-  set -x
   local params="infra=gce&name=^travis-ci-.*&fields\[images\]=name"
   params="${params}&limit=${GCLOUD_CLEANUP_IMAGE_LIMIT}"
 
+  set +o errexit
   (
-    set +o errexit
     curl -sSL "${JOB_BOARD_URL}/images?${params}" 2>/dev/null || echo '{"data":[]}'
-    set -o errexit
   ) | \
     jq -r '.data | .[] | .name' | sort | grep -v '^$' > ${regimg_tmp}
-  set +x
+  set -o errexit
 
   if [[ ! -s ${regimg_tmp} ]] ; then
     log 'no registered images?'
