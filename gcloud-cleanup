@@ -43,7 +43,8 @@ fi
 set -o errexit
 
 echo -en "Active account: "
-${GCLOUD_READ_EXE} auth list --format json | jq -r .active_account
+${GCLOUD_READ_EXE} auth list --format json | \
+  jq -r .active_account 2>/dev/null || echo unknown
 
 for f in ${HERE}/functions/* ; do
   source "$f"
