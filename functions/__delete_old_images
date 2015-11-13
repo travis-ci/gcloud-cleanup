@@ -19,7 +19,9 @@ __delete_old_images() {
   params="${params}&limit=${GCLOUD_CLEANUP_IMAGE_LIMIT}"
 
   (
+    set +o errexit
     curl -sSL "${JOB_BOARD_URL}/images?${params}" 2>/dev/null || echo '{"data":[]}'
+    set -o errexit
   ) | \
     jq -r '.data | .[] | .name' | sort | grep -v '^$' > ${regimg_tmp}
 
