@@ -62,7 +62,8 @@ if ! test -d $CACHE_DIR/google-cloud-sdk ; then
   echo "done"
 fi
 
-$CACHE_DIR/google-cloud-sdk/bin/gcloud components update
+echo "-----> Updating gcloud components"
+$CACHE_DIR/google-cloud-sdk/bin/gcloud components update | indent
 
 if ! test -f $CACHE_DIR/bin/jq ; then
   curl -sSL -o $CACHE_DIR/bin/jq \
