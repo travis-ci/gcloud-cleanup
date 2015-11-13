@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 __delete_old_images() {
-  local regimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
-  local gceimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
-  local delimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
+  local regimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup-regimg.XXXXX)
+  local gceimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup-gceimg.XXXXX)
+  local delimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup-delimg.XXXXX)
 
   log 'fetching GCE CI images'
 

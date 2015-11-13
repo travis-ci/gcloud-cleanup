@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 
 __set_diff() {
-  local cattmp="$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)"
+  local cattmp="$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup-cattmp.XXXXX)"
 
   cat "$1" | sed 's/^/a /' > "$cattmp"
   cat "$2" | sed 's/^/b /' >> "$cattmp"
-  cat "$cattmp" | sort -k2 | uniq -f1 | grep '^b ' | sed 's/^b //'
+
+  set +o errexit
+
+  cat "$cattmp" | \
+    sort -k2 | \
+    uniq -f1 | \
+    grep '^b ' 2>/dev/null | \
+    sed 's/^b //' 2>/dev/null
+
+  set -o errexit
 
   rm -f "${cattmp}"
 }

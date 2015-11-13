@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 
 __delete_old_instances() {
-  TERMINST_TMP=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup.XXXXX)
+  local terminst_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup-terminst.XXXXX)
 
   log 'fetching terminated instances'
 
   ${GCLOUD_READ_EXE} compute instances list --format json | \
-    jq -r '.[] | select(.status == "TERMINATED") | .name' > ${TERMINST_TMP}
+    jq -r '.[] | select(.status == "TERMINATED") | .name' > ${terminst_tmp}
 
-  if [[ -s ${TERMINST_TMP} ]] ; then
+  if [[ -s ${terminst_tmp} ]] ; then
     set +o errexit
-    cat ${TERMINST_TMP} | \
+    cat ${terminst_tmp} | \
       xargs -- ${GCLOUD_WRITE_EXE} compute instances delete \
         --zone=${GCLOUD_ZONE} \
         --verbosity=${GCLOUD_VERBOSITY} \
         -q \
         --${GCLOUD_LOG_HTTP}
     set -o errexit
-    log 'deleted instances' n=$(wc -l ${TERMINST_TMP} | awk '{ print $1 }')
+    log 'deleted instances' n=$(wc -l ${terminst_tmp} | awk '{ print $1 }')
   else
     log 'nothing to clean up, skipping'
   fi
 
-  rm -f ${TERMINST_TMP}
+  rm -f ${terminst_tmp}
 }
