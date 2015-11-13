@@ -62,6 +62,8 @@ if ! test -d $CACHE_DIR/google-cloud-sdk ; then
   echo "done"
 fi
 
+$CACHE_DIR/google-cloud-sdk/bin/gcloud components update
+
 if ! test -f $CACHE_DIR/bin/jq ; then
   curl -sSL -o $CACHE_DIR/bin/jq \
     https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
