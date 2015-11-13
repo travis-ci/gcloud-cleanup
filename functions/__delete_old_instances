@@ -9,12 +9,14 @@ __delete_old_instances() {
     jq -r '.[] | select(.status == "TERMINATED") | .name' > ${TERMINST_TMP}
 
   if [[ -s ${TERMINST_TMP} ]] ; then
+    set +o errexit
     cat ${TERMINST_TMP} | \
       xargs -- ${GCLOUD_WRITE_EXE} compute instances delete \
         --zone=${GCLOUD_ZONE} \
         --verbosity=${GCLOUD_VERBOSITY} \
         -q \
         --${GCLOUD_LOG_HTTP}
+    set -o errexit
     log 'deleted instances' n=$(wc -l ${TERMINST_TMP} | awk '{ print $1 }')
   else
     log 'nothing to clean up, skipping'

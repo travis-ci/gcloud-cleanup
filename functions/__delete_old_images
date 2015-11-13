@@ -18,8 +18,12 @@ __delete_old_images() {
   local params="infra=gce&name=^travis-ci-.*&fields\[images\]=name"
   params="${params}&limit=${GCLOUD_CLEANUP_IMAGE_LIMIT}"
 
-  curl -sSL "${JOB_BOARD_URL}/images?${params}" | \
-    jq -r '.data | .[] | .name' | sort > ${regimg_tmp}
+  set +o errexit
+  (
+    curl -sSL "${JOB_BOARD_URL}/images?${params}" 2>/dev/null || echo '{"data":[]}'
+  ) | \
+    jq -r '.data | .[] | .name' | sort | grep -v '^$' > ${regimg_tmp}
+  set -o errexit
 
   if [[ ! -s ${regimg_tmp} ]] ; then
     log 'no registered images?'
@@ -33,14 +37,17 @@ __delete_old_images() {
     return
   fi
 
-  __set_diff "${regimg_tmp}" "${gceimg_tmp}" > "${delimg_tmp}"
+  __set_diff "${regimg_tmp}" "${gceimg_tmp}" | grep -v '^$' > "${delimg_tmp}"
 
   if [[ -s ${delimg_tmp} ]] ; then
+    set +o errexit
     cat "${delimg_tmp}" | \
       xargs -- ${GCLOUD_WRITE_EXE} compute images delete \
         --verbosity=${GCLOUD_VERBOSITY} \
         -q \
         --${GCLOUD_LOG_HTTP}
+    set -o errexit
+    log 'deleted images' n=$(wc -l ${delimg_tmp} | awk '{ print $1 }')
   fi
 
   rm -f ${regimg_tmp} ${gceimg_tmp} ${delimg_tmp}
