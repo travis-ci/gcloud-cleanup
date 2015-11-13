@@ -14,7 +14,7 @@ __set_diff() {
     grep '^b ' 2>/dev/null | \
     sed 's/^b //' 2>/dev/null
 
-  set -o errexit
-
   rm -f "${cattmp}"
+
+  set -o errexit
 }
