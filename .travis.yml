@@ -7,8 +7,8 @@ cache:
 env:
   global:
   - GCLOUD_CLEANUP_ONCE=1
-  - GCLOUD_WRITE_EXE='echo gcloud'
   - GCLOUD_READ_EXE="${TRAVIS_BUILD_DIR}/.cache/gcloud-read"
+  - GCLOUD_WRITE_EXE='echo not really gcloud'
 
 install:
 - mkdir -p "${TRAVIS_BUILD_DIR}/.cache" "${TRAVIS_BUILD_DIR}/.env"
