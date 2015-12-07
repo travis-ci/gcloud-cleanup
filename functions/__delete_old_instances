@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
-__delete_old_instances() {
+__delete_old_instances_supports_multizone() {
+  echo 1
+}
+
+__delete_old_instances_parallel() {
   local terminst_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup-terminst.XXXXX)
 
-  log 'fetching terminated instances'
+  log 'fetching terminated instances' zone=${GCLOUD_ZONE}
 
   ${GCLOUD_READ_EXE} compute instances list --format json | \
     jq -r '.[] | select(.status == "TERMINATED") | .name' > ${terminst_tmp}

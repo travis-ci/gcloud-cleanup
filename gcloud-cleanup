@@ -1,64 +1,113 @@
 #!/usr/bin/env bash
 
-HERE="$(dirname ${BASH_SOURCE[0]})"
-PATH="$HERE/google-cloud-sdk/bin:$PATH"
+function main() {
+  HERE="$(dirname ${BASH_SOURCE[0]})"
+  PATH="$HERE/google-cloud-sdk/bin:$PATH"
 
-: ${GCLOUD_READ_EXE:=${HERE}/google-cloud-sdk/bin/gcloud}
-: ${GCLOUD_WRITE_EXE:=${HERE}/google-cloud-sdk/bin/gcloud}
-: ${GCLOUD_ZONE:=us-central1-f}
-: ${GCLOUD_VERBOSITY:=info}
-: ${GCLOUD_LOG_HTTP:=log-http}
-: ${GCLOUD_CLEANUP_ENTITIES:=instances images}
-: ${GCLOUD_CLEANUP_LOOP_SLEEP:=10}
-: ${GCLOUD_CLEANUP_ONCE:=}
-: ${GCLOUD_CLEANUP_IMAGE_LIMIT:=100}
-: ${JOB_BOARD_URL:=http://localhost:4567}
+  : ${GCLOUD_READ_EXE:=${HERE}/google-cloud-sdk/bin/gcloud}
+  : ${GCLOUD_WRITE_EXE:=${HERE}/google-cloud-sdk/bin/gcloud}
+  : ${GCLOUD_CLEANUP_ZONES:=us-central1-f us-central1-b}
+  : ${GCLOUD_VERBOSITY:=info}
+  : ${GCLOUD_LOG_HTTP:=log-http}
+  : ${GCLOUD_CLEANUP_ENTITIES:=instances images}
+  : ${GCLOUD_CLEANUP_LOOP_SLEEP:=10}
+  : ${GCLOUD_CLEANUP_ONCE:=}
+  : ${GCLOUD_CLEANUP_IMAGE_LIMIT:=100}
+  : ${JOB_BOARD_URL:=http://localhost:4567}
 
-cat <<EOF
+  cat <<EOF
 Starting up gcloud-cleanup with settings:
 
-  GCLOUD_PROJECT=${GCLOUD_PROJECT}
-  GCLOUD_ZONE=${GCLOUD_ZONE}
-  GCLOUD_VERBOSITY=${GCLOUD_VERBOSITY}
-  GCLOUD_LOG_HTTP=${GCLOUD_LOG_HTTP}
   GCLOUD_CLEANUP_ENTITIES=${GCLOUD_CLEANUP_ENTITIES}
-  GCLOUD_CLEANUP_LOOP_SLEEP=${GCLOUD_CLEANUP_LOOP_SLEEP}
   GCLOUD_CLEANUP_IMAGE_LIMIT=${GCLOUD_CLEANUP_IMAGE_LIMIT}
+  GCLOUD_CLEANUP_LOOP_SLEEP=${GCLOUD_CLEANUP_LOOP_SLEEP}
+  GCLOUD_CLEANUP_ZONES=${GCLOUD_CLEANUP_ZONES}
+  GCLOUD_LOG_HTTP=${GCLOUD_LOG_HTTP}
+  GCLOUD_PROJECT=${GCLOUD_PROJECT}
+  GCLOUD_VERBOSITY=${GCLOUD_VERBOSITY}
 
 EOF
 
-export GCLOUD_CLEANUP_IMAGE_LIMIT
-export GCLOUD_LOG_HTTP
-export GCLOUD_PROJECT
-export GCLOUD_READ_EXE
-export GCLOUD_VERBOSITY
-export GCLOUD_WRITE_EXE
-export GCLOUD_ZONE
-export JOB_BOARD_URL
+  export GCLOUD_CLEANUP_IMAGE_LIMIT
+  export GCLOUD_CLEANUP_ZONES
+  export GCLOUD_LOG_HTTP
+  export GCLOUD_PROJECT
+  export GCLOUD_READ_EXE
+  export GCLOUD_VERBOSITY
+  export GCLOUD_WRITE_EXE
+  export JOB_BOARD_URL
 
-if [[ ${GCLOUD_CLEANUP_DEBUG} || ${DEBUG} ]] ; then
-  set -o xtrace
-fi
-
-set -o errexit
-
-echo -en "Active account: "
-${GCLOUD_READ_EXE} auth list --format json | \
-  jq -r .active_account 2>/dev/null || echo unknown
-
-for f in ${HERE}/functions/* ; do
-  source "$f"
-done
-
-while true ; do
-  for entity in ${GCLOUD_CLEANUP_ENTITIES} ; do
-    __delete_old_${entity}
-  done
-
-  if [[ ${GCLOUD_CLEANUP_ONCE} ]] ; then
-    exit 0
+  if [[ ${GCLOUD_CLEANUP_DEBUG} || ${DEBUG} ]] ; then
+    set -o xtrace
   fi
 
-  log 'sleeping' seconds=${GCLOUD_CLEANUP_LOOP_SLEEP}
-  sleep ${GCLOUD_CLEANUP_LOOP_SLEEP}
-done
+  set -o errexit
+
+  if [[ ${GCLOUD_CLEANUP_SHOW_ACTIVE_ACCOUNT} ]] ; then
+    echo -en "Active account: "
+    ${GCLOUD_READ_EXE} auth list --format json | \
+      jq -r .active_account 2>/dev/null || echo unknown
+  fi
+
+  echo -en 'Loading functions ...'
+
+  for f in ${HERE}/functions/* ; do
+    source "$f"
+  done
+
+  echo 'done.'
+
+  while true ; do
+    local bg_jobs=""
+
+    for entity in ${GCLOUD_CLEANUP_ENTITIES} ; do
+      log 'entering entity loop' level=debug type=${entity}
+
+      if [[ $(__delete_old_${entity}_supports_multizone) != 1 ]] ; then
+        export GCLOUD_ZONE="${GCLOUD_CLEANUP_ZONES%% *}"
+
+        log 'deleting entities without multizone' \
+          type="${entity}" \
+          zone="${GCLOUD_ZONE}"
+
+        __delete_old_${entity}
+        continue
+      fi
+
+      for zone in ${GCLOUD_CLEANUP_ZONES} ; do
+        log 'entering zone loop' level=debug type=${entity} zone=${zone}
+
+        export GCLOUD_ZONE="${zone}"
+
+        if type __delete_old_${entity}_parallel &>/dev/null ; then
+          log 'deleting entities with multizone in parallel' \
+            type="${entity}" \
+            zone="${GCLOUD_ZONE}"
+
+          __delete_old_${entity}_parallel &
+          bg_jobs="1"
+        else
+          log 'deleting entities with multizone' \
+            type="${entity}" \
+            zone="${GCLOUD_ZONE}"
+
+          __delete_old_${entity} || log "Rescuing $?"
+        fi
+      done
+    done
+
+    if [[ ${bg_jobs} ]] ; then
+      log 'waiting for background jobs'
+      wait
+    fi
+
+    if [[ ${GCLOUD_CLEANUP_ONCE} ]] ; then
+      exit 0
+    fi
+
+    log 'sleeping' seconds=${GCLOUD_CLEANUP_LOOP_SLEEP}
+    sleep ${GCLOUD_CLEANUP_LOOP_SLEEP}
+  done
+}
+
+main "$@"

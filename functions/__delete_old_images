@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+__delete_old_images_supports_multizone() {
+  echo 0
+}
+
 __delete_old_images() {
   local regimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup-regimg.XXXXX)
   local gceimg_tmp=$(mktemp ${TMPDIR:-/var/tmp}/gcloud-cleanup-gceimg.XXXXX)

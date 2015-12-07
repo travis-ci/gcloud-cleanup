@@ -3,5 +3,9 @@
 log(){
   msg=$1
   shift
-  echo date=$(date -u +%Y-%m-%dT%H:%M:%S) level=info msg=\"$msg\" $*
+  local record="date=$(date -u +%Y-%m-%dT%H:%M:%S) msg=\"$msg\""
+  if [[ ! $* =~ level= ]] ; then
+    record="$record level=info"
+  fi
+  echo $record $*
 }
