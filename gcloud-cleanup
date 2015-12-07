@@ -54,11 +54,19 @@ while true ; do
   for entity in ${GCLOUD_CLEANUP_ENTITIES} ; do
     for zone in ${GCLOUD_CLEANUP_ZONES} ; do
       export GCLOUD_ZONE="${zone}"
-      __delete_old_${entity} &
+
+      if type __delete_old_${entity}_parallel &>/dev/null ; then
+        __delete_old_${entity}_parallel &
+        bg_jobs="1"
+      else
+        __delete_old_${entity}
+      fi
     done
   done
 
-  wait
+  if [[ ${bg_jobs} ]] ; then
+    wait
+  fi
 
   if [[ ${GCLOUD_CLEANUP_ONCE} ]] ; then
     exit 0
