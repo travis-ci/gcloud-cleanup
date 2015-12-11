@@ -8,9 +8,6 @@ group: edge
 
 env:
   global:
-  - GCLOUD_CLEANUP_ONCE=1
-  - GCLOUD_READ_EXE="${TRAVIS_BUILD_DIR}/.cache/gcloud-read"
-  - GCLOUD_WRITE_EXE='echo not really gcloud'
   - GO15VENDOREXPERIMENT='1'
 
 install:
