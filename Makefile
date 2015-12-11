@@ -39,6 +39,10 @@ clean:
 	$(RM) -rv ./build
 	$(FIND) $(GOPATH)/pkg -wholename "*$(PACKAGE)*a" | $(XARGS) $(RM) -v
 
+.PHONY: build
+build: deps
+	$(GO) get -x -ldflags "$(GOBUILD_LDFLAGS)" $(ALL_PACKAGES)
+
 .PHONY: crossbuild
 crossbuild: .crossdeps deps
 	$(GOXC) -pv=$(VERSION_VALUE) -build-ldflags "$(GOBUILD_LDFLAGS)"

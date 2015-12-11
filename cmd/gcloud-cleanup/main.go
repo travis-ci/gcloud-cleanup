@@ -9,6 +9,7 @@ import (
 
 func main() {
 	app := cli.NewApp()
+	app.Version = gcloudcleanup.VersionString
 	app.Flags = gcloudcleanup.Flags
 	app.Action = func(c *cli.Context) {
 		gcloudcleanup.NewCLI(c).Run()
