@@ -15,6 +15,19 @@
 			"path": "/context"
 		},
 		{
+			"importpath": "golang.org/x/oauth2",
+			"repository": "https://go.googlesource.com/oauth2",
+			"revision": "2baa8a1b9338cf13d9eeb27696d761155fa480be",
+			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/oauth2/jwt",
+			"repository": "https://go.googlesource.com/oauth2",
+			"revision": "2baa8a1b9338cf13d9eeb27696d761155fa480be",
+			"branch": "master",
+			"path": "/jwt"
+		},
+		{
 			"importpath": "google.golang.org/api/compute/v1",
 			"repository": "https://code.googlesource.com/google-api-go-client",
 			"revision": "ac3c98838f3e512d7636b885f3a021b60dacd1c8",
@@ -34,6 +47,20 @@
 			"revision": "ac3c98838f3e512d7636b885f3a021b60dacd1c8",
 			"branch": "master",
 			"path": "/googleapi"
+		},
+		{
+			"importpath": "google.golang.org/cloud/compute/metadata",
+			"repository": "https://code.googlesource.com/gocloud",
+			"revision": "ec5efcc6a7862ae410e34d8de21fdec12e367732",
+			"branch": "master",
+			"path": "/compute/metadata"
+		},
+		{
+			"importpath": "google.golang.org/cloud/internal",
+			"repository": "https://code.googlesource.com/gocloud",
+			"revision": "ec5efcc6a7862ae410e34d8de21fdec12e367732",
+			"branch": "master",
+			"path": "/internal"
 		}
 	]
 }

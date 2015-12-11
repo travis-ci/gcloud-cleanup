@@ -3,12 +3,15 @@ package gcloudcleanup
 import (
 	"time"
 
+	"google.golang.org/api/compute/v1"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 )
 
 type CLI struct {
 	c   *cli.Context
+	cs  *compute.Service
 	log *logrus.Logger
 }
 
@@ -21,37 +24,52 @@ func NewCLI(c *cli.Context) *CLI {
 }
 
 func (c *CLI) Run() {
-	if c.c.Bool("debug") {
-		c.log.Level = logrus.DebugLevel
+	err := c.setupComputeService(c.c.String("account-json"))
+	if err != nil {
+		c.log.WithField("err", err).Fatal("failed to set up compute service")
 	}
 
-	sleepDur := c.c.Duration("loop-sleep")
+	c.setupLogger()
 
-	entityMap := map[string]func() error{
+	sleepDur := c.c.Duration("loop-sleep")
+	once := c.c.Bool("once")
+	zones := c.c.StringSlice("zones")
+	entities := c.c.StringSlice("entities")
+
+	entityMap := map[string]func(string) error{
 		"instances": c.cleanupInstances,
 		"images":    c.cleanupImages,
 	}
 
 	for {
-		for _, entity := range c.c.StringSlice("entities") {
-			if f, ok := entityMap[entity]; ok {
-				c.log.WithField("type", entity).Debug("entering entity loop")
-
-				err := f()
-
-				if err != nil {
+		for _, zone := range zones {
+			for _, entity := range entities {
+				if f, ok := entityMap[entity]; ok {
 					c.log.WithFields(logrus.Fields{
 						"type": entity,
-						"err":  err,
-					}).Fatal("failure during entity cleanup")
-				}
-			} else {
-				c.log.WithField("type", entity).Fatal("unknown entity type")
-			}
-		}
+						"zone": zone,
+					}).Debug("entering entity loop")
 
-		if c.c.Bool("once") {
-			break
+					err := f(zone)
+
+					if err != nil {
+						c.log.WithFields(logrus.Fields{
+							"type": entity,
+							"zone": zone,
+							"err":  err,
+						}).Fatal("failure during entity cleanup")
+					}
+				} else {
+					c.log.WithFields(logrus.Fields{
+						"type": entity,
+						"zone": zone,
+					}).Fatal("unknown entity type")
+				}
+			}
+
+			if once {
+				break
+			}
 		}
 
 		c.log.WithField("duration", sleepDur).Info("sleeping")
@@ -59,10 +77,25 @@ func (c *CLI) Run() {
 	}
 }
 
-func (c *CLI) cleanupInstances() error {
-	return nil
+func (c *CLI) setupComputeService(accountJSON string) error {
+	cs, err := buildGoogleComputeService(accountJSON)
+	c.cs = cs
+	return err
 }
 
-func (c *CLI) cleanupImages() error {
-	return nil
+func (c *CLI) setupLogger() {
+	if c.c.Bool("debug") {
+		c.log.Level = logrus.DebugLevel
+	}
+}
+
+func (c *CLI) cleanupInstances(zone string) error {
+	ic := newInstanceCleaner(c.cs, c.c.Duration("rate-limit-tick"),
+		c.c.String("project-id"), zone)
+	return ic.Run()
+}
+
+func (c *CLI) cleanupImages(zone string) error {
+	ic := newImageCleaner(c.cs, c.c.Duration("rate-limit-tick"))
+	return ic.Run()
 }

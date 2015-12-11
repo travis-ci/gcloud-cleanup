@@ -8,6 +8,12 @@ import (
 
 var (
 	Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:   "account-json",
+			Value:  "{}",
+			Usage:  "file path to or json blob of GCE account stuff",
+			EnvVar: "GCLOUD_CLEANUP_ACCOUNT_JSON,GOOGLE_CREDENTIALS",
+		},
 		cli.StringSliceFlag{
 			Name:   "zones",
 			Value:  &cli.StringSlice{"us-central1-b", "us-central1-f"},
@@ -30,6 +36,12 @@ var (
 			Name:   "once",
 			Usage:  "only run once, no looping",
 			EnvVar: "GCLOUD_CLEANUP_ONCE",
+		},
+		cli.DurationFlag{
+			Name:   "rate-limit-tick",
+			Value:  5 * time.Second,
+			Usage:  "API usage rate limiter interval",
+			EnvVar: "GCLOUD_CLEANUP_RATE_LIMIT_TICK",
 		},
 		cli.IntFlag{
 			Name:   "image-limit",
