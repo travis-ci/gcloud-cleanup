@@ -18,12 +18,14 @@ type instanceCleaner struct {
 	rateLimiter *time.Ticker
 	filters     []string
 
+	noop bool
+
 	CutoffTime time.Time
 }
 
 func newInstanceCleaner(cs *compute.Service, log *logrus.Logger,
 	rlTick time.Duration, cutoffTime time.Time,
-	projectID string, filters []string) *instanceCleaner {
+	projectID string, filters []string, noop bool) *instanceCleaner {
 
 	return &instanceCleaner{
 		cs:  cs,
@@ -31,8 +33,11 @@ func newInstanceCleaner(cs *compute.Service, log *logrus.Logger,
 
 		projectID:   projectID,
 		rateLimiter: time.NewTicker(rlTick),
-		CutoffTime:  cutoffTime,
 		filters:     filters,
+
+		noop: noop,
+
+		CutoffTime: cutoffTime,
 	}
 }
 
@@ -161,8 +166,12 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *compute.Instanc
 }
 
 func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
-	ic.apiRateLimit()
+	if ic.noop {
+		ic.log.WithField("instance", inst.Name).Debug("not really deleting image")
+		return nil
+	}
 
+	ic.apiRateLimit()
 	_, err := ic.cs.Instances.Delete(ic.projectID, filepath.Base(inst.Zone), inst.Name).Do()
 	return err
 }
