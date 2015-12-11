@@ -37,6 +37,10 @@ fi
 eval "$(gimme 1.5.1)" 2>&1 | indent
 cd "$BUILD_DIR"
 
+if ! test -f $CACHE_DIR/.profile.d/homebin.sh ; then
+  echo 'PATH=$PATH:$HOME/build/linux/amd64:$HOME/bin' > $CACHE_DIR/.profile.d/homebin.sh
+fi
+
 echo "-----> Syncing cache dir to build dir... "
 rsync -az $CACHE_DIR/ $BUILD_DIR/ | indent
 
