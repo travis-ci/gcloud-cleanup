@@ -11,8 +11,7 @@ env:
   - GO15VENDOREXPERIMENT='1'
 
 install:
-- go get github.com/FiloSottile/gvt
-- go get github.com/laher/goxc
+- make prereqs
 
 script:
 - travis_retry make deps

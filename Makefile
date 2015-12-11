@@ -54,6 +54,11 @@ distclean: clean
 .PHONY: deps
 deps: vendor/.deps-fetched
 
+.PHONY: prereqs
+prereqs:
+	$(GO) get github.com/FiloSottile/gvt
+	$(GO) get github.com/laher/goxc
+
 vendor/.deps-fetched:
 	$(GVT) rebuild
 	touch $@
