@@ -10,9 +10,22 @@ env:
   global:
   - GO15VENDOREXPERIMENT='1'
 
+addons:
+  artifacts:
+    paths:
+    - "./build/linux/amd64/gcloud-cleanup"
+    - "./build/darwin/amd64/gcloud-cleanup"
+    - "./build.tar.bz2"
+    target_paths:
+    - travis-ci/gcloud-cleanup/$TRAVIS_BRANCH
+    - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT
+
 install:
 - make prereqs
 
 script:
 - travis_retry make deps
 - make crossbuild
+
+after_script:
+- tar -cjvf build.tar.bz2 build
