@@ -92,7 +92,7 @@ func (ic *imageCleaner) Run() error {
 	ic.log.WithFields(logrus.Fields{
 		"project": ic.projectID,
 		"filters": strings.Join(ic.filters, ","),
-	}).Info("running instance cleanup")
+	}).Info("running image cleanup")
 
 	imageChan := make(chan *compute.Image)
 	errChan := make(chan error)
