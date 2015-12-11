@@ -2,7 +2,7 @@
 # bin/detect <build-dir>
 set -e
 
-if test -f "$1/gcloud-cleanup"
+if test -d "$1/cmd/gcloud-cleanup"
 then echo "gcloud-cleanup"
 else echo no; exit 1
 fi
