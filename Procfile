@@ -1,1 +1,1 @@
-worker: ./gcloud-cleanup
+worker: gcloud-cleanup

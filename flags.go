@@ -17,7 +17,7 @@ var (
 		cli.StringFlag{
 			Name:   "project-id",
 			Usage:  "name of GCE project",
-			EnvVar: "GCLOUD_CLEANUP_PROJECT_ID",
+			EnvVar: "GCLOUD_CLEANUP_PROJECT_ID,GCLOUD_PROJECT",
 		},
 		cli.DurationFlag{
 			Name:   "instance-max-age",

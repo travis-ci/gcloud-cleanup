@@ -41,6 +41,11 @@ func (c *CLI) Run() {
 	c.setupLogger()
 
 	sleepDur := c.c.Duration("loop-sleep")
+	if sleepDur == (0 * time.Second) {
+		sleepDur = 5 * time.Minute
+		c.log.WithField("loop_sleep", sleepDur).Info("default loop sleep set")
+	}
+
 	once := c.c.Bool("once")
 
 	entities := c.c.StringSlice("entities")
