@@ -12,12 +12,13 @@ import (
 
 type instanceCleaner struct {
 	cs  *compute.Service
-	log *logrus.Logger
+	log *logrus.Entry
 
 	projectID   string
 	rateLimiter *time.Ticker
-	cutoffTime  time.Time
 	filters     []string
+
+	CutoffTime time.Time
 }
 
 func newInstanceCleaner(cs *compute.Service, log *logrus.Logger,
@@ -26,11 +27,11 @@ func newInstanceCleaner(cs *compute.Service, log *logrus.Logger,
 
 	return &instanceCleaner{
 		cs:  cs,
-		log: log,
+		log: log.WithField("component", "instance_cleaner"),
 
 		projectID:   projectID,
 		rateLimiter: time.NewTicker(rlTick),
-		cutoffTime:  cutoffTime,
+		CutoffTime:  cutoffTime,
 		filters:     filters,
 	}
 }
@@ -38,7 +39,7 @@ func newInstanceCleaner(cs *compute.Service, log *logrus.Logger,
 func (ic *instanceCleaner) Run() error {
 	ic.log.WithFields(logrus.Fields{
 		"project":     ic.projectID,
-		"cutoff_time": ic.cutoffTime.Format(time.RFC3339),
+		"cutoff_time": ic.CutoffTime.Format(time.RFC3339),
 		"filters":     strings.Join(ic.filters, ","),
 	}).Info("running instance cleanup")
 
@@ -107,8 +108,7 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *compute.Instanc
 
 			for _, inst := range list.Instances {
 				log := ic.log.WithFields(logrus.Fields{
-					"instance":  inst.Name,
-					"component": "instance_cleaner",
+					"instance": inst.Name,
 				})
 
 				if inst.Status == "TERMINATED" {
@@ -134,10 +134,10 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *compute.Instanc
 					"parsed": ts.Format(time.RFC3339),
 				}).Debug("parsed and adjusted creation timestamp")
 
-				if ts.Before(ic.cutoffTime) {
+				if ts.Before(ic.CutoffTime) {
 					log.WithFields(logrus.Fields{
 						"created": ts.Format(time.RFC3339),
-						"cutoff":  ic.cutoffTime.Format(time.RFC3339),
+						"cutoff":  ic.CutoffTime.Format(time.RFC3339),
 					}).Debug("sending instance for deletion")
 
 					instChan <- inst

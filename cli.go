@@ -108,36 +108,45 @@ func (c *CLI) cleanupInstances() error {
 			c.log.WithField("filters", strings.Join(filters, ",")).Info("default filters set")
 		}
 
-		maxAge := c.c.Duration("instance-max-age")
-		cutoff := time.Now().UTC().Add(-1 * maxAge)
+		cutoffTime := time.Now().UTC().Add(-1 * c.c.Duration("instance-max-age"))
 
-		if time.Now().UTC().Before(cutoff) {
+		if time.Now().UTC().Before(cutoffTime) {
 			c.log.WithFields(logrus.Fields{
-				"cutoff":  cutoff,
-				"max_age": maxAge,
+				"cutoff":  cutoffTime,
+				"max_age": c.c.Duration("instance-max-age"),
 			}).Error("invalid instance max age given")
 			return errInvalidInstancesMaxAge
 		}
 
 		c.log.WithFields(logrus.Fields{
-			"max_age":    maxAge,
+			"max_age":    c.c.Duration("instance-max-age"),
 			"tick":       c.c.Duration("rate-tick-limit"),
 			"project_id": c.c.String("project-id"),
 			"filters":    strings.Join(filters, ","),
-			"cutoff":     cutoff.Format(time.RFC3339),
+			"cutoff":     cutoffTime.Format(time.RFC3339),
 		}).Debug("creating instance cleaner with")
 
 		c.instanceCleaner = newInstanceCleaner(c.cs,
 			c.log, c.c.Duration("rate-limit-tick"),
-			cutoff, c.c.String("project-id"), filters)
+			cutoffTime, c.c.String("project-id"), filters)
 	}
+
+	c.instanceCleaner.CutoffTime = time.Now().UTC().Add(-1 * c.c.Duration("instance-max-age"))
 
 	return c.instanceCleaner.Run()
 }
 
 func (c *CLI) cleanupImages() error {
 	if c.imageCleaner == nil {
-		c.imageCleaner = newImageCleaner(c.cs, c.c.Duration("rate-limit-tick"))
+		filters := c.c.StringSlice("image-filters")
+		if len(filters) == 0 {
+			filters = []string{"name eq ^travis-ci.*"}
+			c.log.WithField("filters", strings.Join(filters, ",")).Info("default filters set")
+		}
+
+		c.imageCleaner = newImageCleaner(c.cs,
+			c.log, c.c.Duration("rate-limit-tick"), c.c.String("project-id"), filters)
 	}
+
 	return c.imageCleaner.Run()
 }
