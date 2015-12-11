@@ -43,5 +43,10 @@ var (
 			Usage:  "url to job-board instance for fetching registered images",
 			EnvVar: "GCLOUD_CLEANUP_JOB_BOARD_URL,JOB_BOARD_URL",
 		},
+		cli.BoolFlag{
+			Name:   "debug",
+			Usage:  "output more stuff",
+			EnvVar: "GCLOUD_CLEANUP_DEBUG,DEBUG",
+		},
 	}
 )
