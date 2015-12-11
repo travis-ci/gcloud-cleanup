@@ -17,10 +17,6 @@
   "Os": "linux darwin",
   "ConfigVersion": "0.9",
   "BuildSettings": {
-    "Verbose": true,
-    "LdFlagsXVars": {
-      "TimeNow": "main.BUILD_DATE",
-      "Version": "main.VERSION"
-    }
+    "Verbose": true
   }
 }
