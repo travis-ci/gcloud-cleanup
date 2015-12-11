@@ -32,7 +32,15 @@ func buildGoogleComputeService(accountJSON string) (*compute.Service, error) {
 	}
 
 	client := config.Client(oauth2.NoContext)
-	return compute.New(client)
+
+	cs, err := compute.New(client)
+	if err != nil {
+		return nil, err
+	}
+
+	cs.UserAgent = "gcloud-cleanup"
+
+	return cs, nil
 }
 
 func loadGoogleAccountJSON(filenameOrJSON string) (*gceAccountJSON, error) {

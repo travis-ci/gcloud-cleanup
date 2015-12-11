@@ -1,6 +1,8 @@
 package gcloudcleanup
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/api/compute/v1"
@@ -9,10 +11,17 @@ import (
 	"github.com/codegangsta/cli"
 )
 
+var (
+	errInvalidInstancesMaxAge = fmt.Errorf("invalid max age")
+)
+
 type CLI struct {
 	c   *cli.Context
 	cs  *compute.Service
 	log *logrus.Logger
+
+	instanceCleaner *instanceCleaner
+	imageCleaner    *imageCleaner
 }
 
 func NewCLI(c *cli.Context) *CLI {
@@ -33,43 +42,40 @@ func (c *CLI) Run() {
 
 	sleepDur := c.c.Duration("loop-sleep")
 	once := c.c.Bool("once")
-	zones := c.c.StringSlice("zones")
-	entities := c.c.StringSlice("entities")
 
-	entityMap := map[string]func(string) error{
+	entities := c.c.StringSlice("entities")
+	if len(entities) == 0 {
+		entities = []string{"instances", "images"}
+		c.log.WithField("entities", entities).Info("default entities set")
+	}
+
+	entityMap := map[string]func() error{
 		"instances": c.cleanupInstances,
 		"images":    c.cleanupImages,
 	}
 
 	for {
-		for _, zone := range zones {
-			for _, entity := range entities {
-				if f, ok := entityMap[entity]; ok {
+		for _, entity := range entities {
+			if f, ok := entityMap[entity]; ok {
+				c.log.WithField("type", entity).Debug("entering entity loop")
+
+				err := f()
+
+				if err != nil {
 					c.log.WithFields(logrus.Fields{
 						"type": entity,
-						"zone": zone,
-					}).Debug("entering entity loop")
-
-					err := f(zone)
-
-					if err != nil {
-						c.log.WithFields(logrus.Fields{
-							"type": entity,
-							"zone": zone,
-							"err":  err,
-						}).Fatal("failure during entity cleanup")
-					}
-				} else {
-					c.log.WithFields(logrus.Fields{
-						"type": entity,
-						"zone": zone,
-					}).Fatal("unknown entity type")
+						"err":  err,
+					}).Fatal("failure during entity cleanup")
 				}
+			} else {
+				c.log.WithField("type", entity).Fatal("unknown entity type")
 			}
 
-			if once {
-				break
-			}
+			c.log.WithField("type", entity).Debug("done with entity loop")
+		}
+
+		if once {
+			break
 		}
 
 		c.log.WithField("duration", sleepDur).Info("sleeping")
@@ -89,13 +95,44 @@ func (c *CLI) setupLogger() {
 	}
 }
 
-func (c *CLI) cleanupInstances(zone string) error {
-	ic := newInstanceCleaner(c.cs, c.c.Duration("rate-limit-tick"),
-		c.c.String("project-id"), zone)
-	return ic.Run()
+func (c *CLI) cleanupInstances() error {
+	if c.instanceCleaner == nil {
+		filters := c.c.StringSlice("instance-filters")
+		if len(filters) == 0 {
+			filters = []string{"name eq ^testing-gce.*"}
+			c.log.WithField("filters", strings.Join(filters, ",")).Info("default filters set")
+		}
+
+		maxAge := c.c.Duration("instance-max-age")
+		cutoff := time.Now().UTC().Add(-1 * maxAge)
+
+		if time.Now().UTC().Before(cutoff) {
+			c.log.WithFields(logrus.Fields{
+				"cutoff":  cutoff,
+				"max_age": maxAge,
+			}).Error("invalid instance max age given")
+			return errInvalidInstancesMaxAge
+		}
+
+		c.log.WithFields(logrus.Fields{
+			"max_age":    maxAge,
+			"tick":       c.c.Duration("rate-tick-limit"),
+			"project_id": c.c.String("project-id"),
+			"filters":    strings.Join(filters, ","),
+			"cutoff":     cutoff.Format(time.RFC3339),
+		}).Debug("creating instance cleaner with")
+
+		c.instanceCleaner = newInstanceCleaner(c.cs,
+			c.log, c.c.Duration("rate-limit-tick"),
+			cutoff, c.c.String("project-id"), filters)
+	}
+
+	return c.instanceCleaner.Run()
 }
 
-func (c *CLI) cleanupImages(zone string) error {
-	ic := newImageCleaner(c.cs, c.c.Duration("rate-limit-tick"))
-	return ic.Run()
+func (c *CLI) cleanupImages() error {
+	if c.imageCleaner == nil {
+		c.imageCleaner = newImageCleaner(c.cs, c.c.Duration("rate-limit-tick"))
+	}
+	return c.imageCleaner.Run()
 }
