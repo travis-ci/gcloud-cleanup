@@ -1,26 +1,31 @@
-language: bash
+language: go
 
-cache:
-  directories:
-  - "${TRAVIS_BUILD_DIR}/.cache"
+go: 1.5.1
+
+dist: trusty
+
+group: edge
 
 env:
   global:
-  - GCLOUD_CLEANUP_ONCE=1
-  - GCLOUD_READ_EXE="${TRAVIS_BUILD_DIR}/.cache/gcloud-read"
-  - GCLOUD_WRITE_EXE='echo not really gcloud'
+  - GO15VENDOREXPERIMENT='1'
+
+addons:
+  artifacts:
+    paths:
+    - "./build/linux/amd64/gcloud-cleanup"
+    - "./build/darwin/amd64/gcloud-cleanup"
+    - "./build.tar.bz2"
+    target_paths:
+    - travis-ci/gcloud-cleanup/$TRAVIS_BRANCH
+    - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT
 
 install:
-- mkdir -p "${TRAVIS_BUILD_DIR}/.cache" "${TRAVIS_BUILD_DIR}/.env"
-- if [[ ! -f "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ]] ; then
-    echo '#!/usr/bin/env bash' > "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ;
-    echo 'echo "[]"' >> "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ;
-    chmod +x "${TRAVIS_BUILD_DIR}/.cache/gcloud-read" ;
-  fi
+- make prereqs
 
 script:
-- ./bin/detect "${TRAVIS_BUILD_DIR}" | grep gcloud-cleanup
-- bash -n ./bin/compile
-- ./bin/release "${TRAVIS_BUILD_DIR}" | grep '^---'
-- export PATH="$TRAVIS_BUILD_DIR/google-cloud-sdk/bin:$PATH"
-- ./gcloud-cleanup
+- travis_retry make deps
+- make crossbuild
+
+after_script:
+- tar -cjvf build.tar.bz2 build

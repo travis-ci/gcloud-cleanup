@@ -1,2 +1,5 @@
 .*env
-google-cloud-sdk
+vendor/*
+!vendor/manifest
+.crossdeps
+build/
