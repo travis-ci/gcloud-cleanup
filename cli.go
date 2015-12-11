@@ -145,7 +145,8 @@ func (c *CLI) cleanupImages() error {
 		}
 
 		c.imageCleaner = newImageCleaner(c.cs,
-			c.log, c.c.Duration("rate-limit-tick"), c.c.String("project-id"), filters)
+			c.log, c.c.Duration("rate-limit-tick"), c.c.String("project-id"),
+			c.c.String("job-board-url"), filters)
 	}
 
 	return c.imageCleaner.Run()
