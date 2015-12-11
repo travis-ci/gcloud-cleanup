@@ -128,7 +128,7 @@ func (c *CLI) cleanupInstances() error {
 
 		c.instanceCleaner = newInstanceCleaner(c.cs,
 			c.log, c.c.Duration("rate-limit-tick"),
-			cutoffTime, c.c.String("project-id"), filters)
+			cutoffTime, c.c.String("project-id"), filters, c.c.Bool("noop"))
 	}
 
 	c.instanceCleaner.CutoffTime = time.Now().UTC().Add(-1 * c.c.Duration("instance-max-age"))
@@ -145,7 +145,8 @@ func (c *CLI) cleanupImages() error {
 		}
 
 		c.imageCleaner = newImageCleaner(c.cs,
-			c.log, c.c.Duration("rate-limit-tick"), c.c.String("project-id"), filters)
+			c.log, c.c.Duration("rate-limit-tick"), c.c.String("project-id"),
+			c.c.String("job-board-url"), c.c.Int("image-limit"), filters, c.c.Bool("noop"))
 	}
 
 	return c.imageCleaner.Run()

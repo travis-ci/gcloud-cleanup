@@ -27,9 +27,13 @@ var (
 		},
 		cli.StringSliceFlag{
 			Name:   "instance-filters",
-			Value:  &cli.StringSlice{"name eq ^testing-gce.*"},
 			Usage:  "filters used when fetching instances for deletion",
 			EnvVar: "GCLOUD_CLEANUP_INSTANCE_FILTERS",
+		},
+		cli.StringSliceFlag{
+			Name:   "image-filters",
+			Usage:  "filters used when fetching images for deletion",
+			EnvVar: "GCLOUD_CLEANUP_IMAGE_FILTERS",
 		},
 		cli.StringSliceFlag{
 			Name:   "entities",
@@ -69,6 +73,11 @@ var (
 			Name:   "debug",
 			Usage:  "output more stuff",
 			EnvVar: "GCLOUD_CLEANUP_DEBUG,DEBUG",
+		},
+		cli.BoolFlag{
+			Name:   "noop",
+			Usage:  "don't do mutative stuff",
+			EnvVar: "GCLOUD_CLEANUP_NOOP,NOOP",
 		},
 	}
 )
