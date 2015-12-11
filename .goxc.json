@@ -1,0 +1,26 @@
+{
+  "ArtifactsDest": "build/",
+  "OutPath": "{{.Dest}}{{.PS}}{{.Os}}{{.PS}}{{.Arch}}{{.PS}}gcloud-cleanup{{.Ext}}",
+  "Tasks": [
+    "go-test",
+    "go-install",
+    "xc"
+  ],
+  "TaskSettings": {
+    "go-test": {
+      "dir": "github.com/travis-ci/gcloud-cleanup",
+      "i": false,
+      "short": false
+    }
+  },
+  "Arch": "amd64",
+  "Os": "linux darwin",
+  "ConfigVersion": "0.9",
+  "BuildSettings": {
+    "Verbose": true,
+    "LdFlagsXVars": {
+      "TimeNow": "main.BUILD_DATE",
+      "Version": "main.VERSION"
+    }
+  }
+}
