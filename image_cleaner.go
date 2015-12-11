@@ -1,6 +1,8 @@
 package gcloudcleanup
 
 import (
+	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -16,11 +18,14 @@ type imageCleaner struct {
 	jobBoardURL string
 	rateLimiter *time.Ticker
 	filters     []string
+	imageLimit  int
+
+	noop bool
 }
 
 func newImageCleaner(cs *compute.Service, log *logrus.Logger,
 	rlTick time.Duration, projectID, jobBoardURL string,
-	filters []string) *imageCleaner {
+	imageLimit int, filters []string, noop bool) *imageCleaner {
 
 	return &imageCleaner{
 		cs:  cs,
@@ -29,7 +34,10 @@ func newImageCleaner(cs *compute.Service, log *logrus.Logger,
 		projectID:   projectID,
 		jobBoardURL: jobBoardURL,
 		rateLimiter: time.NewTicker(rlTick),
+		imageLimit:  imageLimit,
 		filters:     filters,
+
+		noop: noop,
 	}
 }
 
@@ -48,6 +56,8 @@ func (ic *imageCleaner) Run() error {
 		ic.log.Warn("no registered images?")
 		return nil
 	}
+
+	ic.log.WithField("count", len(registeredImages)).Debug("fetched registered images")
 
 	imageChan := make(chan *compute.Image)
 	errChan := make(chan error)
@@ -83,19 +93,108 @@ func (ic *imageCleaner) Run() error {
 }
 
 func (ic *imageCleaner) fetchRegisteredImages() (map[string]bool, error) {
-	return map[string]bool{}, nil
+	images := map[string]bool{}
+	nameFilter := ""
+
+	for _, filter := range ic.filters {
+		if !strings.HasPrefix(filter, "name eq") {
+			continue
+		}
+
+		nameFilter = strings.Replace(filter, "name eq", "", -1)
+		nameFilter = strings.Trim(strings.TrimSpace(nameFilter), "'\"")
+	}
+
+	if nameFilter == "" {
+		nameFilter = "^travis-ci.*"
+	}
+
+	qs := url.Values{}
+	qs.Set("infra", "gce")
+	qs.Set("fields[images]", "name")
+	qs.Set("name", nameFilter)
+	qs.Set("limit", fmt.Sprintf("%v", ic.imageLimit))
+
+	u, err := url.Parse(ic.jobBoardURL)
+	u.Path = "/images"
+	u.RawQuery = qs.Encode()
+
+	if err != nil {
+		return images, err
+	}
+
+	imageResp, err := makeJobBoardImagesRequest(u.String())
+	if err != nil {
+		return images, err
+	}
+
+	if len(imageResp.Data) == 0 {
+		return images, err
+	}
+
+	for _, imgRef := range imageResp.Data {
+		images[imgRef.Name] = true
+	}
+
+	return images, nil
 }
 
 func (ic *imageCleaner) fetchImagesToDelete(registeredImages map[string]bool,
 	imgChan chan *compute.Image, errChan chan error) {
 
-	imgChan <- nil
-	errChan <- nil
-	return
+	listCall := ic.cs.Images.List(ic.projectID)
+	for _, filter := range ic.filters {
+		listCall.Filter(filter)
+	}
+
+	pageTok := ""
+
+	for {
+		if pageTok != "" {
+			listCall.PageToken(pageTok)
+		}
+
+		ic.apiRateLimit()
+		ic.log.WithField("page_token", pageTok).Debug("fetching images list")
+		resp, err := listCall.Do()
+
+		if err != nil {
+			errChan <- err
+			continue
+		}
+
+		for _, image := range resp.Items {
+			if _, ok := registeredImages[image.Name]; !ok {
+				ic.log.WithField("image", image.Name).Debug("sending image for deletion")
+
+				imgChan <- image
+				continue
+			}
+
+			ic.log.WithField("image", image.Name).Debug("skipping image")
+		}
+
+		if resp.NextPageToken == "" {
+			ic.log.Debug("no next page, breaking out of loop")
+			imgChan <- nil
+			errChan <- nil
+			return
+		}
+
+		ic.log.Debug("continuing to next page")
+		pageTok = resp.NextPageToken
+	}
 }
 
 func (ic *imageCleaner) deleteImage(image *compute.Image) error {
-	return nil
+	if ic.noop {
+		ic.log.WithField("image", image.Name).Debug("not really deleting image")
+		return nil
+	}
+
+	ic.apiRateLimit()
+	_, err := ic.cs.Images.Delete(ic.projectID, image.Name).Do()
+	return err
 }
 
 func (ic *imageCleaner) apiRateLimit() {
