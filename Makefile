@@ -41,7 +41,7 @@ clean:
 
 .PHONY: build
 build: deps
-	$(GO) get -x -ldflags "$(GOBUILD_LDFLAGS)" $(ALL_PACKAGES)
+	$(GO) install -x -ldflags "$(GOBUILD_LDFLAGS)" $(ALL_PACKAGES)
 
 .PHONY: crossbuild
 crossbuild: .crossdeps deps
