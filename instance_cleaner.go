@@ -23,6 +23,11 @@ type instanceCleaner struct {
 	CutoffTime time.Time
 }
 
+type instanceDeletionRequest struct {
+	Instance *compute.Instance
+	Reason   string
+}
+
 func newInstanceCleaner(cs *compute.Service, log *logrus.Logger,
 	rlTick time.Duration, cutoffTime time.Time,
 	projectID string, filters []string, noop bool) *instanceCleaner {
@@ -48,7 +53,7 @@ func (ic *instanceCleaner) Run() error {
 		"filters":     strings.Join(ic.filters, ","),
 	}).Info("running instance cleanup")
 
-	instChan := make(chan *compute.Instance)
+	instChan := make(chan *instanceDeletionRequest)
 	errChan := make(chan error)
 
 	go ic.fetchInstancesToDelete(instChan, errChan)
@@ -61,27 +66,36 @@ func (ic *instanceCleaner) Run() error {
 		}
 	}()
 
-	for inst := range instChan {
-		if inst == nil {
-			return nil
+	nDeleted := 0
+
+	for req := range instChan {
+		if req == nil {
+			break
 		}
 
-		err := ic.deleteInstance(inst)
+		err := ic.deleteInstance(req.Instance)
 
 		if err != nil {
 			ic.log.WithFields(logrus.Fields{
 				"err":      err,
-				"instance": inst.Name,
+				"instance": req.Instance.Name,
 			}).Warn("failed to delete instance")
 		}
 
-		ic.log.WithField("instance", inst.Name).Info("deleted")
+		nDeleted++
+
+		ic.log.WithFields(logrus.Fields{
+			"instance": req.Instance.Name,
+			"reason":   req.Reason,
+		}).Info("deleted")
 	}
+
+	ic.log.WithField("measure#instances.deleted", nDeleted).Info("done running instance cleanup")
 
 	return nil
 }
 
-func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *compute.Instance, errChan chan error) {
+func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletionRequest, errChan chan error) {
 	listCall := ic.cs.Instances.AggregatedList(ic.projectID)
 	for _, filter := range ic.filters {
 		listCall.Filter(filter)
@@ -121,7 +135,7 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *compute.Instanc
 						"status": inst.Status,
 					}).Debug("sending instance for deletion")
 
-					instChan <- inst
+					instChan <- &instanceDeletionRequest{Instance: inst, Reason: "terminated"}
 					continue
 				}
 
@@ -145,7 +159,7 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *compute.Instanc
 						"cutoff":  ic.CutoffTime.Format(time.RFC3339),
 					}).Debug("sending instance for deletion")
 
-					instChan <- inst
+					instChan <- &instanceDeletionRequest{Instance: inst, Reason: "stale"}
 					continue
 				}
 
