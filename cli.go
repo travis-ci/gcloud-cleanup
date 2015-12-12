@@ -33,12 +33,20 @@ func NewCLI(c *cli.Context) *CLI {
 }
 
 func (c *CLI) Run() {
+	c.setupLogger()
+
+	fields := logrus.Fields{}
+
+	for _, name := range c.c.GlobalFlagNames() {
+		fields[name] = c.c.Generic(name)
+	}
+
+	c.log.WithFields(fields).Debug("configuration")
+
 	err := c.setupComputeService(c.c.String("account-json"))
 	if err != nil {
 		c.log.WithField("err", err).Fatal("failed to set up compute service")
 	}
-
-	c.setupLogger()
 
 	sleepDur := c.c.Duration("loop-sleep")
 	if sleepDur == (0 * time.Second) {
