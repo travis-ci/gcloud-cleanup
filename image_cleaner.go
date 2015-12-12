@@ -23,6 +23,11 @@ type imageCleaner struct {
 	noop bool
 }
 
+type imageDeletionRequest struct {
+	Image  *compute.Image
+	Reason string
+}
+
 func newImageCleaner(cs *compute.Service, log *logrus.Logger,
 	rlTick time.Duration, projectID, jobBoardURL string,
 	imageLimit int, filters []string, noop bool) *imageCleaner {
@@ -59,10 +64,10 @@ func (ic *imageCleaner) Run() error {
 
 	ic.log.WithField("count", len(registeredImages)).Debug("fetched registered images")
 
-	imageChan := make(chan *compute.Image)
+	imgChan := make(chan *imageDeletionRequest)
 	errChan := make(chan error)
 
-	go ic.fetchImagesToDelete(registeredImages, imageChan, errChan)
+	go ic.fetchImagesToDelete(registeredImages, imgChan, errChan)
 	go func() {
 		for err := range errChan {
 			if err == nil {
@@ -72,21 +77,29 @@ func (ic *imageCleaner) Run() error {
 		}
 	}()
 
-	for image := range imageChan {
-		if image == nil {
+	for req := range imgChan {
+		if req == nil {
 			return nil
 		}
 
-		err := ic.deleteImage(image)
+		if ic.noop {
+			ic.log.WithField("image", req.Image.Name).Debug("not really deleting image")
+			continue
+		}
+
+		err := ic.deleteImage(req.Image)
 
 		if err != nil {
 			ic.log.WithFields(logrus.Fields{
 				"err":   err,
-				"image": image.Name,
+				"image": req.Image.Name,
 			}).Warn("failed to delete image")
 		}
 
-		ic.log.WithField("image", image.Name).Info("deleted")
+		ic.log.WithFields(logrus.Fields{
+			"image":  req.Image.Name,
+			"reason": req.Reason,
+		}).Info("deleted")
 	}
 
 	return nil
@@ -140,7 +153,7 @@ func (ic *imageCleaner) fetchRegisteredImages() (map[string]bool, error) {
 }
 
 func (ic *imageCleaner) fetchImagesToDelete(registeredImages map[string]bool,
-	imgChan chan *compute.Image, errChan chan error) {
+	imgChan chan *imageDeletionRequest, errChan chan error) {
 
 	listCall := ic.cs.Images.List(ic.projectID)
 	for _, filter := range ic.filters {
@@ -167,7 +180,7 @@ func (ic *imageCleaner) fetchImagesToDelete(registeredImages map[string]bool,
 			if _, ok := registeredImages[image.Name]; !ok {
 				ic.log.WithField("image", image.Name).Debug("sending image for deletion")
 
-				imgChan <- image
+				imgChan <- &imageDeletionRequest{Image: image, Reason: "not-registered"}
 				continue
 			}
 
@@ -187,11 +200,6 @@ func (ic *imageCleaner) fetchImagesToDelete(registeredImages map[string]bool,
 }
 
 func (ic *imageCleaner) deleteImage(image *compute.Image) error {
-	if ic.noop {
-		ic.log.WithField("image", image.Name).Debug("not really deleting image")
-		return nil
-	}
-
 	ic.apiRateLimit()
 	_, err := ic.cs.Images.Delete(ic.projectID, image.Name).Do()
 	return err
