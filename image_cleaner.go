@@ -62,7 +62,7 @@ func (ic *imageCleaner) Run() error {
 		return nil
 	}
 
-	ic.logMeasure("images.registered", len(registeredImages)).Debug("fetched registered images")
+	ic.l2met("gauge#images.registered", len(registeredImages), "fetched registered images")
 
 	imgChan := make(chan *imageDeletionRequest)
 	errChan := make(chan error)
@@ -106,7 +106,7 @@ func (ic *imageCleaner) Run() error {
 		}).Info("deleted")
 	}
 
-	ic.logMeasure("images.deleted", nDeleted).Info("done running image cleanup")
+	ic.l2met("measure#images.deleted", nDeleted, "done running image cleanup")
 	return nil
 }
 
@@ -204,7 +204,7 @@ func (ic *imageCleaner) fetchImagesToDelete(registeredImages map[string]bool,
 		pageTok = resp.NextPageToken
 	}
 
-	ic.logMeasure("images.count", nImages).Info("done checking all images")
+	ic.l2met("gauge#images.count", nImages, "done checking all images")
 	imgChan <- nil
 	errChan <- nil
 }
@@ -215,8 +215,8 @@ func (ic *imageCleaner) deleteImage(image *compute.Image) error {
 	return err
 }
 
-func (ic *imageCleaner) logMeasure(name string, n int) *logrus.Entry {
-	return ic.log.WithField(fmt.Sprintf("measure#%s", name), n)
+func (ic *imageCleaner) l2met(name string, n int, msg string) {
+	ic.log.WithField(name, n).Info(msg)
 }
 
 func (ic *imageCleaner) apiRateLimit() {

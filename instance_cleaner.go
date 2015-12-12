@@ -91,7 +91,7 @@ func (ic *instanceCleaner) Run() error {
 		}).Info("deleted")
 	}
 
-	ic.logMeasure("instances.deleted", nDeleted).Info("done running instance cleanup")
+	ic.l2met("measure#instances.deleted", nDeleted, "done running instance cleanup")
 
 	return nil
 }
@@ -189,10 +189,10 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletio
 
 	for status, count := range statusCounts {
 		key := fmt.Sprintf("gauge#instances.status.%s", status)
-		ic.log.WithField(key, count).Info("counted instances with status")
+		ic.l2met(key, count, "counted instances with status")
 	}
 
-	ic.logMeasure("instances.count", nInstances).Info("done checking all instances")
+	ic.l2met("gauge#instances.count", nInstances, "done checking all instances")
 	instChan <- nil
 	errChan <- nil
 }
@@ -208,8 +208,8 @@ func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
 	return err
 }
 
-func (ic *instanceCleaner) logMeasure(name string, n int) *logrus.Entry {
-	return ic.log.WithField(fmt.Sprintf("measure#%s", name), n)
+func (ic *instanceCleaner) l2met(name string, n int, msg string) {
+	ic.log.WithField(name, n).Info(msg)
 }
 
 func (ic *instanceCleaner) apiRateLimit() {
