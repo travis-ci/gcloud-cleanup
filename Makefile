@@ -31,13 +31,20 @@ GOBUILD_LDFLAGS ?= \
 export GO15VENDOREXPERIMENT
 
 .PHONY: all
-all: clean crossbuild
+all: clean test crossbuild
 
 .PHONY: clean
 clean:
 	$(RM) $(GOPATH)/bin/gcloud-cleanup
 	$(RM) -rv ./build
 	$(FIND) $(GOPATH)/pkg -wholename "*$(PACKAGE)*a" | $(XARGS) $(RM) -v
+
+.PHONY: test
+test:
+	$(GO) test -x -v -cover \
+		-coverpkg $(PACKAGE) \
+		-coverprofile package.coverprofile \
+		$(PACKAGE)
 
 .PHONY: build
 build: deps
