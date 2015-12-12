@@ -66,9 +66,11 @@ func (ic *instanceCleaner) Run() error {
 		}
 	}()
 
+	nDeleted := 0
+
 	for req := range instChan {
 		if req == nil {
-			return nil
+			break
 		}
 
 		err := ic.deleteInstance(req.Instance)
@@ -80,11 +82,15 @@ func (ic *instanceCleaner) Run() error {
 			}).Warn("failed to delete instance")
 		}
 
+		nDeleted++
+
 		ic.log.WithFields(logrus.Fields{
 			"instance": req.Instance.Name,
 			"reason":   req.Reason,
 		}).Info("deleted")
 	}
+
+	ic.log.WithField("measure#instances.deleted", nDeleted).Info("done running instance cleanup")
 
 	return nil
 }

@@ -77,9 +77,11 @@ func (ic *imageCleaner) Run() error {
 		}
 	}()
 
+	nDeleted := 0
+
 	for req := range imgChan {
 		if req == nil {
-			return nil
+			break
 		}
 
 		if ic.noop {
@@ -96,11 +98,15 @@ func (ic *imageCleaner) Run() error {
 			}).Warn("failed to delete image")
 		}
 
+		nDeleted++
+
 		ic.log.WithFields(logrus.Fields{
 			"image":  req.Image.Name,
 			"reason": req.Reason,
 		}).Info("deleted")
 	}
+
+	ic.log.WithField("measure#images.deleted", nDeleted).Info("done running image cleanup")
 
 	return nil
 }
