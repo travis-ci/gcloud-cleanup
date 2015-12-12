@@ -1,1 +1,1 @@
-worker: ./build/linux/amd64/gcloud-cleanup
+worker: gcloud-cleanup
