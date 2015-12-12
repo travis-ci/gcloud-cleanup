@@ -3,3 +3,4 @@ vendor/*
 !vendor/manifest
 .crossdeps
 build/
+*coverprofile

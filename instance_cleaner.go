@@ -1,6 +1,7 @@
 package gcloudcleanup
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
@@ -90,7 +91,7 @@ func (ic *instanceCleaner) Run() error {
 		}).Info("deleted")
 	}
 
-	ic.log.WithField("measure#instances.deleted", nDeleted).Info("done running instance cleanup")
+	ic.l2met("measure#instances.deleted", nDeleted, "done running instance cleanup")
 
 	return nil
 }
@@ -102,6 +103,8 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletio
 	}
 
 	pageTok := ""
+	statusCounts := map[string]int{}
+	nInstances := 0
 
 	for {
 		if pageTok != "" {
@@ -126,9 +129,17 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletio
 			}).Debug("checking instance results in zone")
 
 			for _, inst := range list.Instances {
+				nInstances++
+
 				log := ic.log.WithFields(logrus.Fields{
 					"instance": inst.Name,
 				})
+
+				if _, ok := statusCounts[inst.Status]; !ok {
+					statusCounts[inst.Status] = 0
+				}
+
+				statusCounts[inst.Status]++
 
 				if inst.Status == "TERMINATED" {
 					log.WithFields(logrus.Fields{
@@ -169,14 +180,21 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletio
 
 		if resp.NextPageToken == "" {
 			ic.log.Debug("no next page, breaking out of loop")
-			instChan <- nil
-			errChan <- nil
-			return
+			break
 		}
 
 		ic.log.Debug("continuing to next page")
 		pageTok = resp.NextPageToken
 	}
+
+	for status, count := range statusCounts {
+		key := fmt.Sprintf("gauge#instances.status.%s", status)
+		ic.l2met(key, count, "counted instances with status")
+	}
+
+	ic.l2met("gauge#instances.count", nInstances, "done checking all instances")
+	instChan <- nil
+	errChan <- nil
 }
 
 func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
@@ -188,6 +206,10 @@ func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
 	ic.apiRateLimit()
 	_, err := ic.cs.Instances.Delete(ic.projectID, filepath.Base(inst.Zone), inst.Name).Do()
 	return err
+}
+
+func (ic *instanceCleaner) l2met(name string, n int, msg string) {
+	ic.log.WithField(name, n).Info(msg)
 }
 
 func (ic *instanceCleaner) apiRateLimit() {

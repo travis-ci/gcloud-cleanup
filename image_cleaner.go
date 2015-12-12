@@ -62,7 +62,7 @@ func (ic *imageCleaner) Run() error {
 		return nil
 	}
 
-	ic.log.WithField("count", len(registeredImages)).Debug("fetched registered images")
+	ic.l2met("gauge#images.registered", len(registeredImages), "fetched registered images")
 
 	imgChan := make(chan *imageDeletionRequest)
 	errChan := make(chan error)
@@ -106,8 +106,7 @@ func (ic *imageCleaner) Run() error {
 		}).Info("deleted")
 	}
 
-	ic.log.WithField("measure#images.deleted", nDeleted).Info("done running image cleanup")
-
+	ic.l2met("measure#images.deleted", nDeleted, "done running image cleanup")
 	return nil
 }
 
@@ -167,6 +166,7 @@ func (ic *imageCleaner) fetchImagesToDelete(registeredImages map[string]bool,
 	}
 
 	pageTok := ""
+	nImages := 0
 
 	for {
 		if pageTok != "" {
@@ -183,6 +183,8 @@ func (ic *imageCleaner) fetchImagesToDelete(registeredImages map[string]bool,
 		}
 
 		for _, image := range resp.Items {
+			nImages++
+
 			if _, ok := registeredImages[image.Name]; !ok {
 				ic.log.WithField("image", image.Name).Debug("sending image for deletion")
 
@@ -195,20 +197,26 @@ func (ic *imageCleaner) fetchImagesToDelete(registeredImages map[string]bool,
 
 		if resp.NextPageToken == "" {
 			ic.log.Debug("no next page, breaking out of loop")
-			imgChan <- nil
-			errChan <- nil
-			return
+			break
 		}
 
 		ic.log.Debug("continuing to next page")
 		pageTok = resp.NextPageToken
 	}
+
+	ic.l2met("gauge#images.count", nImages, "done checking all images")
+	imgChan <- nil
+	errChan <- nil
 }
 
 func (ic *imageCleaner) deleteImage(image *compute.Image) error {
 	ic.apiRateLimit()
 	_, err := ic.cs.Images.Delete(ic.projectID, image.Name).Do()
 	return err
+}
+
+func (ic *imageCleaner) l2met(name string, n int, msg string) {
+	ic.log.WithField(name, n).Info(msg)
 }
 
 func (ic *imageCleaner) apiRateLimit() {
