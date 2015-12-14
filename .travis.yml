@@ -28,4 +28,4 @@ script:
 - make crossbuild
 
 after_script:
-- tar -czvf build.tar.gz build Procfile
+- tar -czvf build.tar.gz build Procfile Makefile
