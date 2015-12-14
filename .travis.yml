@@ -20,6 +20,10 @@ addons:
     - travis-ci/gcloud-cleanup/$TRAVIS_BRANCH
     - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT
 
+deploy:
+  provider: script
+  script: echo made it
+
 install:
 - make prereqs
 
