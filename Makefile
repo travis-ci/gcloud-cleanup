@@ -38,8 +38,8 @@ GOBUILD_LDFLAGS ?= \
 
 export GO15VENDOREXPERIMENT
 
-.PHONY: heroku
-heroku:
+.PHONY: heroku-bin
+heroku-bin:
 	$(GREP) worker Procfile
 	./build/$(OS)/$(ARCH)/gcloud-cleanup --version
 
