@@ -5,6 +5,7 @@ GO ?= go
 GOXC ?= goxc
 GREP ?= grep
 GVT ?= gvt
+SED ?= sed
 TOUCH ?= touch
 TR ?= tr
 UNAME ?= uname
@@ -23,7 +24,7 @@ REV_URL_VALUE ?= https://github.com/travis-ci/gcloud-cleanup/tree/$(shell $(GIT)
 GENERATED_VAR := $(PACKAGE).GeneratedString
 GENERATED_VALUE ?= $(shell $(DATE) -u +'%Y-%m-%dT%H:%M:%S%z')
 COPYRIGHT_VAR := $(PACKAGE).CopyrightString
-COPYRIGHT_VALUE ?= $(shell $(GREP) -i ^copyright LICENSE | sed 's/^[Cc]opyright //')
+COPYRIGHT_VALUE ?= $(shell $(GREP) -i ^copyright LICENSE | $(SED) 's/^[Cc]opyright //')
 
 OS := $(shell $(UNAME) | $(TR) '[:upper:]' '[:lower:]')
 ARCH := $(shell $(UNAME) -m | if $(GREP) -q x86_64 ; then echo amd64 ; else $(UNAME) -m ; fi)
