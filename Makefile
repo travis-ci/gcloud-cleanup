@@ -16,10 +16,13 @@ COPYRIGHT_VALUE ?= $(shell grep -i ^copyright LICENSE | sed 's/^[Cc]opyright //'
 FIND ?= find
 GO ?= go
 GOXC ?= goxc
+GREP ?= grep
 GVT ?= gvt
 TOUCH ?= touch
 XARGS ?= xargs
 
+UNAME := $(shell uname | tr '[:upper:]' '[:lower:]')
+ARCH := $(shell uname -m | if grep -q x86_64 ; then echo amd64 ; else uname -m ; fi)
 GOPATH := $(shell echo $${GOPATH%%:*})
 GOBUILD_LDFLAGS ?= \
 	-X '$(VERSION_VAR)=$(VERSION_VALUE)' \
@@ -29,6 +32,11 @@ GOBUILD_LDFLAGS ?= \
 	-X '$(COPYRIGHT_VAR)=$(COPYRIGHT_VALUE)'
 
 export GO15VENDOREXPERIMENT
+
+.PHONY: heroku
+heroku:
+	$(GREP) worker Procfile
+	./build/$(UNAME)/$(ARCH)/gcloud-cleanup --version
 
 .PHONY: all
 all: clean test crossbuild
