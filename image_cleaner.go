@@ -51,11 +51,14 @@ func newImageCleaner(
 
 		projectID:   projectID,
 		jobBoardURL: jobBoardURL,
-		rateLimiter: rateLimiter,
 		imageLimit:  imageLimit,
 		filters:     filters,
 
 		noop: noop,
+
+		rateLimiter:       rateLimiter,
+		rateLimitMaxCalls: rateLimitMaxCalls,
+		rateLimitDuration: rateLimitDuration,
 	}
 }
 

@@ -49,13 +49,16 @@ func newInstanceCleaner(
 		cs:  cs,
 		log: log.WithField("component", "instance_cleaner"),
 
-		projectID:   projectID,
-		rateLimiter: rateLimiter,
-		filters:     filters,
+		projectID: projectID,
+		filters:   filters,
 
 		noop: noop,
 
 		CutoffTime: cutoffTime,
+
+		rateLimiter:       rateLimiter,
+		rateLimitMaxCalls: rateLimitMaxCalls,
+		rateLimitDuration: rateLimitDuration,
 	}
 }
 
