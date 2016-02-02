@@ -6,12 +6,14 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/travis-ci/worker/ratelimit"
 )
 
 func TestNewImageCleaner(t *testing.T) {
 	log := logrus.New()
+	ratelimit := ratelimit.NewNullRateLimiter()
 
-	ic := newImageCleaner(nil, log, 1*time.Second,
+	ic := newImageCleaner(nil, log, ratelimit, 10, time.Second,
 		"foo-project", "http://foo.example.com", 20,
 		[]string{"name eq ^travis-test.*"}, true)
 

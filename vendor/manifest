@@ -27,6 +27,20 @@
 			"path": "/spew"
 		},
 		{
+			"importpath": "github.com/garyburd/redigo/internal",
+			"repository": "https://github.com/garyburd/redigo",
+			"revision": "836b6e58b3358112c8291565d01c35b8764070d7",
+			"branch": "master",
+			"path": "/internal"
+		},
+		{
+			"importpath": "github.com/garyburd/redigo/redis",
+			"repository": "https://github.com/garyburd/redigo",
+			"revision": "836b6e58b3358112c8291565d01c35b8764070d7",
+			"branch": "master",
+			"path": "/redis"
+		},
+		{
 			"importpath": "github.com/pmezard/go-difflib/difflib",
 			"repository": "https://github.com/pmezard/go-difflib",
 			"revision": "e8554b8641db39598be7f6342874b958f12ae1d4",

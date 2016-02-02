@@ -2,11 +2,13 @@ package gcloudcleanup
 
 import (
 	"fmt"
+	"math/rand"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 
 	"google.golang.org/api/compute/v1"
 )
@@ -15,13 +17,16 @@ type instanceCleaner struct {
 	cs  *compute.Service
 	log *logrus.Entry
 
-	projectID   string
-	rateLimiter *time.Ticker
-	filters     []string
+	projectID string
+	filters   []string
 
 	noop bool
 
 	CutoffTime time.Time
+
+	rateLimiter       ratelimit.RateLimiter
+	rateLimitMaxCalls uint64
+	rateLimitDuration time.Duration
 }
 
 type instanceDeletionRequest struct {
@@ -29,16 +34,23 @@ type instanceDeletionRequest struct {
 	Reason   string
 }
 
-func newInstanceCleaner(cs *compute.Service, log *logrus.Logger,
-	rlTick time.Duration, cutoffTime time.Time,
-	projectID string, filters []string, noop bool) *instanceCleaner {
-
+func newInstanceCleaner(
+	cs *compute.Service,
+	log *logrus.Logger,
+	rateLimiter ratelimit.RateLimiter,
+	rateLimitMaxCalls uint64,
+	rateLimitDuration time.Duration,
+	cutoffTime time.Time,
+	projectID string,
+	filters []string,
+	noop bool,
+) *instanceCleaner {
 	return &instanceCleaner{
 		cs:  cs,
 		log: log.WithField("component", "instance_cleaner"),
 
 		projectID:   projectID,
-		rateLimiter: time.NewTicker(rlTick),
+		rateLimiter: rateLimiter,
 		filters:     filters,
 
 		noop: noop,
@@ -212,7 +224,26 @@ func (ic *instanceCleaner) l2met(name string, n int, msg string) {
 	ic.log.WithField(name, n).Info(msg)
 }
 
-func (ic *instanceCleaner) apiRateLimit() {
+func (ic *instanceCleaner) apiRateLimit() error {
 	ic.log.Debug("waiting for rate limiter tick")
-	<-ic.rateLimiter.C
+	errCount := 0
+
+	for {
+		ok, err := ic.rateLimiter.RateLimit("gce-api", ic.rateLimitMaxCalls, ic.rateLimitDuration)
+		if err != nil {
+			errCount++
+			if errCount >= 5 {
+				ic.log.WithField("err", err).Info("rate limiter errored 5 times")
+				return err
+			}
+		} else {
+			errCount = 0
+		}
+		if ok {
+			return nil
+		}
+
+		// Sleep for up to 1 second
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
+	}
 }

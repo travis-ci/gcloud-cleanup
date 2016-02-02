@@ -6,13 +6,15 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/travis-ci/worker/ratelimit"
 )
 
 func TestNewInstanceCleaner(t *testing.T) {
 	log := logrus.New()
+	ratelimit := ratelimit.NewNullRateLimiter()
 	cutoffTime := time.Now().Add(-1 * time.Hour)
 
-	ic := newInstanceCleaner(nil, log, 1*time.Second,
+	ic := newInstanceCleaner(nil, log, ratelimit, 10, time.Second,
 		cutoffTime, "foo-project",
 		[]string{"name eq ^test.*"}, true)
 

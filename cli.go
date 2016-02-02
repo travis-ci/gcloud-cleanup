@@ -9,6 +9,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )
 
 var (
@@ -16,9 +17,10 @@ var (
 )
 
 type CLI struct {
-	c   *cli.Context
-	cs  *compute.Service
-	log *logrus.Logger
+	c           *cli.Context
+	cs          *compute.Service
+	log         *logrus.Logger
+	rateLimiter ratelimit.RateLimiter
 
 	instanceCleaner *instanceCleaner
 	imageCleaner    *imageCleaner
@@ -34,6 +36,7 @@ func NewCLI(c *cli.Context) *CLI {
 
 func (c *CLI) Run() {
 	c.setupLogger()
+	c.setupRateLimiter()
 
 	fields := logrus.Fields{}
 
@@ -108,6 +111,10 @@ func (c *CLI) setupLogger() {
 	}
 }
 
+func (c *CLI) setupRateLimiter() {
+	c.rateLimiter = ratelimit.NewRateLimiter(c.c.String("rate-limit-redis-url"), c.c.String("rate-limit-prefix"))
+}
+
 func (c *CLI) cleanupInstances() error {
 	if c.instanceCleaner == nil {
 		filters := c.c.StringSlice("instance-filters")
@@ -135,7 +142,7 @@ func (c *CLI) cleanupInstances() error {
 		}).Debug("creating instance cleaner with")
 
 		c.instanceCleaner = newInstanceCleaner(c.cs,
-			c.log, c.c.Duration("rate-limit-tick"),
+			c.log, c.rateLimiter, uint64(c.c.Int("rate-limit-max-calls")), c.c.Duration("rate-limit-duration"),
 			cutoffTime, c.c.String("project-id"), filters, c.c.Bool("noop"))
 	}
 
@@ -153,7 +160,7 @@ func (c *CLI) cleanupImages() error {
 		}
 
 		c.imageCleaner = newImageCleaner(c.cs,
-			c.log, c.c.Duration("rate-limit-tick"), c.c.String("project-id"),
+			c.log, c.rateLimiter, uint64(c.c.Int("rate-limit-max-calls")), c.c.Duration("rate-limit-duration"), c.c.String("project-id"),
 			c.c.String("job-board-url"), c.c.Int("image-limit"), filters, c.c.Bool("noop"))
 	}
 
