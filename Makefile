@@ -38,11 +38,6 @@ GOBUILD_LDFLAGS ?= \
 
 export GO15VENDOREXPERIMENT
 
-.PHONY: heroku-bin
-heroku-bin:
-	$(GREP) worker Procfile
-	./build/$(OS)/$(ARCH)/gcloud-cleanup --version
-
 .PHONY: all
 all: clean test crossbuild
 
