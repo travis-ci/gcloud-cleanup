@@ -65,7 +65,7 @@ var (
 			Name:   "rate-limit-max-calls",
 			Value:  10,
 			Usage:  "number of calls per duration to let through to the GCE API",
-			EnvVar: "GCLOUD_CLEANUP_RATE_LIMIT_DURATION",
+			EnvVar: "GCLOUD_CLEANUP_RATE_LIMIT_MAX_CALLS",
 		},
 		cli.DurationFlag{
 			Name:   "rate-limit-duration",
