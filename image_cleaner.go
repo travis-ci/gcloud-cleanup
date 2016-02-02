@@ -2,11 +2,13 @@ package gcloudcleanup
 
 import (
 	"fmt"
+	"math/rand"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 	"google.golang.org/api/compute/v1"
 )
 
@@ -16,11 +18,14 @@ type imageCleaner struct {
 
 	projectID   string
 	jobBoardURL string
-	rateLimiter *time.Ticker
 	filters     []string
 	imageLimit  int
 
 	noop bool
+
+	rateLimiter       ratelimit.RateLimiter
+	rateLimitMaxCalls uint64
+	rateLimitDuration time.Duration
 }
 
 type imageDeletionRequest struct {
@@ -28,17 +33,25 @@ type imageDeletionRequest struct {
 	Reason string
 }
 
-func newImageCleaner(cs *compute.Service, log *logrus.Logger,
-	rlTick time.Duration, projectID, jobBoardURL string,
-	imageLimit int, filters []string, noop bool) *imageCleaner {
-
+func newImageCleaner(
+	cs *compute.Service,
+	log *logrus.Logger,
+	rateLimiter ratelimit.RateLimiter,
+	rateLimitMaxCalls uint64,
+	rateLimitDuration time.Duration,
+	projectID,
+	jobBoardURL string,
+	imageLimit int,
+	filters []string,
+	noop bool,
+) *imageCleaner {
 	return &imageCleaner{
 		cs:  cs,
 		log: log.WithField("component", "image_cleaner"),
 
 		projectID:   projectID,
 		jobBoardURL: jobBoardURL,
-		rateLimiter: time.NewTicker(rlTick),
+		rateLimiter: rateLimiter,
 		imageLimit:  imageLimit,
 		filters:     filters,
 
@@ -219,7 +232,26 @@ func (ic *imageCleaner) l2met(name string, n int, msg string) {
 	ic.log.WithField(name, n).Info(msg)
 }
 
-func (ic *imageCleaner) apiRateLimit() {
+func (ic *imageCleaner) apiRateLimit() error {
 	ic.log.Debug("waiting for rate limiter tick")
-	<-ic.rateLimiter.C
+	errCount := 0
+
+	for {
+		ok, err := ic.rateLimiter.RateLimit("gce-api", ic.rateLimitMaxCalls, ic.rateLimitDuration)
+		if err != nil {
+			errCount++
+			if errCount >= 5 {
+				ic.log.WithField("err", err).Info("rate limiter errored 5 times")
+				return err
+			}
+		} else {
+			errCount = 0
+		}
+		if ok {
+			return nil
+		}
+
+		// Sleep for up to 1 second
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
+	}
 }

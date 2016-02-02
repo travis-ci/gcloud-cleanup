@@ -51,11 +51,27 @@ var (
 			Usage:  "only run once, no looping",
 			EnvVar: "GCLOUD_CLEANUP_ONCE",
 		},
+		cli.StringFlag{
+			Name:   "rate-limit-redis-url",
+			Usage:  "URL to Redis instance to use for rate limiting",
+			EnvVar: "GCLOUD_CLEANUP_RATE_LIMIT_REDIS_URL",
+		},
+		cli.StringFlag{
+			Name:   "rate-limit-prefix",
+			Usage:  "prefix for the rate limit key in Redis",
+			EnvVar: "GCLOUD_CLEANUP_RATE_LIMIT_PREFIX",
+		},
+		cli.IntFlag{
+			Name:   "rate-limit-max-calls",
+			Value:  10,
+			Usage:  "number of calls per duration to let through to the GCE API",
+			EnvVar: "GCLOUD_CLEANUP_RATE_LIMIT_DURATION",
+		},
 		cli.DurationFlag{
-			Name:   "rate-limit-tick",
+			Name:   "rate-limit-duration",
 			Value:  1 * time.Second,
-			Usage:  "API usage rate limiter interval",
-			EnvVar: "GCLOUD_CLEANUP_RATE_LIMIT_TICK",
+			Usage:  "interval in which to let max-calls through to the GCE API",
+			EnvVar: "GCLOUD_CLEANUP_RATE_LIMIT_DURATION",
 		},
 		cli.IntFlag{
 			Name:   "image-limit",
