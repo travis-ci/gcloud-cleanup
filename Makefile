@@ -2,7 +2,6 @@ DATE ?= date
 FIND ?= find
 GIT ?= git
 GO ?= go
-GOXC ?= goxc
 GREP ?= grep
 GVT ?= gvt
 SED ?= sed
@@ -21,10 +20,10 @@ REV_VAR := $(PACKAGE).RevisionString
 REV_VALUE ?= $(shell $(GIT) rev-parse HEAD 2>/dev/null || echo "???")
 REV_URL_VAR := $(PACKAGE).RevisionURLString
 REV_URL_VALUE ?= https://github.com/travis-ci/gcloud-cleanup/tree/$(shell $(GIT) rev-parse HEAD 2>/dev/null || echo "'???'")
-GENERATED_VAR := $(PACKAGE).GeneratedString
-GENERATED_VALUE ?= $(shell $(DATE) -u +'%Y-%m-%dT%H:%M:%S%z')
-COPYRIGHT_VAR := $(PACKAGE).CopyrightString
-COPYRIGHT_VALUE ?= $(shell $(GREP) -i ^copyright LICENSE | $(SED) 's/^[Cc]opyright //')
+	GENERATED_VAR := $(PACKAGE).GeneratedString
+	GENERATED_VALUE ?= $(shell $(DATE) -u +'%Y-%m-%dT%H:%M:%S%z')
+	COPYRIGHT_VAR := $(PACKAGE).CopyrightString
+	COPYRIGHT_VALUE ?= $(shell $(GREP) -i ^copyright LICENSE | $(SED) 's/^[Cc]opyright //')
 
 OS := $(shell $(UNAME) | $(TR) '[:upper:]' '[:lower:]')
 ARCH := $(shell $(UNAME) -m | if $(GREP) -q x86_64 ; then echo amd64 ; else $(UNAME) -m ; fi)
@@ -59,12 +58,11 @@ build: deps
 	$(GO) install -x -ldflags "$(GOBUILD_LDFLAGS)" $(ALL_PACKAGES)
 
 .PHONY: crossbuild
-crossbuild: .crossdeps deps
-	$(GOXC) -pv=$(VERSION_VALUE) -build-ldflags "$(GOBUILD_LDFLAGS)"
-
-.crossdeps:
-	GOROOT_BOOTSTRAP=$(GOROOT) $(GOXC) -t
-	$(TOUCH) $@
+crossbuild: deps
+	GOARCH=amd64 GOOS=darwin $(GO) build -o build/darwin/amd64/gcloud-cleanup \
+		-ldflags "$(GOBUILD_LDFLAGS)" $(PACKAGE)/cmd/gcloud-cleanup
+	GOARCH=amd64 GOOS=linux $(GO) build -o build/linux/amd64/gcloud-cleanup \
+		-ldflags "$(GOBUILD_LDFLAGS)" $(PACKAGE)/cmd/gcloud-cleanup
 
 .PHONY: distclean
 distclean: clean
@@ -76,7 +74,6 @@ deps: vendor/.deps-fetched
 .PHONY: prereqs
 prereqs:
 	$(GO) get github.com/FiloSottile/gvt
-	$(GO) get github.com/laher/goxc
 
 vendor/.deps-fetched:
 	$(GVT) rebuild
