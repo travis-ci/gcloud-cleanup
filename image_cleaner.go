@@ -166,6 +166,11 @@ func (ic *imageCleaner) fetchRegisteredImages() (map[string]bool, error) {
 		return images, err
 	}
 
+	if len(imageResp.Data) == ic.imageLimit {
+		return images,
+			fmt.Errorf("image count matches limit of %v, aborting", ic.imageLimit)
+	}
+
 	for _, imgRef := range imageResp.Data {
 		images[imgRef.Name] = true
 	}
