@@ -75,7 +75,7 @@ var (
 		},
 		cli.IntFlag{
 			Name:   "image-limit",
-			Value:  100,
+			Value:  1000,
 			Usage:  "number of images to fetch from job-board",
 			EnvVar: "GCLOUD_CLEANUP_IMAGE_LIMIT",
 		},
