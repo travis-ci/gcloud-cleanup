@@ -18,8 +18,8 @@
 			"notests": true
 		},
 		{
-			"importpath": "github.com/codegangsta/cli",
-			"repository": "https://github.com/codegangsta/cli",
+			"importpath": "github.com/urfave/cli",
+			"repository": "https://github.com/urfave/cli",
 			"vcs": "git",
 			"revision": "168c95418e66e019fe17b8f4f5c45aa62ff80e23",
 			"branch": "master",

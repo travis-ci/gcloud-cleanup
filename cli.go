@@ -8,8 +8,8 @@ import (
 	"google.golang.org/api/compute/v1"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/codegangsta/cli"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
+	"github.com/urfave/cli"
 )
 
 var (
