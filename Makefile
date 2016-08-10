@@ -45,7 +45,7 @@ all: clean test crossbuild
 clean:
 	$(RM) $(GOPATH)/bin/gcloud-cleanup
 	$(RM) -rv ./build
-	$(FIND) $(GOPATH)/pkg -wholename "*$(PACKAGE)*a" | $(XARGS) $(RM) -v
+	$(FIND) $(GOPATH)/pkg -wholename "*$(PACKAGE)*.a" | $(XARGS) $(RM) -v
 
 .PHONY: test
 test:
