@@ -61,7 +61,7 @@ func (c *CLI) Run() {
 
 	entities := c.c.StringSlice("entities")
 	if len(entities) == 0 {
-		entities = []string{"instances", "images"}
+		entities = []string{"instances"}
 		c.log.WithField("entities", entities).Info("default entities set")
 	}
 
