@@ -73,12 +73,6 @@ var (
 			Usage:  "interval in which to let max-calls through to the GCE API",
 			EnvVar: "GCLOUD_CLEANUP_RATE_LIMIT_DURATION",
 		},
-		cli.IntFlag{
-			Name:   "image-limit",
-			Value:  1000,
-			Usage:  "number of images to fetch from job-board",
-			EnvVar: "GCLOUD_CLEANUP_IMAGE_LIMIT",
-		},
 		cli.StringFlag{
 			Name:   "job-board-url",
 			Value:  "http://localhost:4567",

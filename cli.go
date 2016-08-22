@@ -161,7 +161,7 @@ func (c *CLI) cleanupImages() error {
 
 		c.imageCleaner = newImageCleaner(c.cs,
 			c.log, c.rateLimiter, uint64(c.c.Int("rate-limit-max-calls")), c.c.Duration("rate-limit-duration"), c.c.String("project-id"),
-			c.c.String("job-board-url"), c.c.Int("image-limit"), filters, c.c.Bool("noop"))
+			c.c.String("job-board-url"), filters, c.c.Bool("noop"))
 	}
 
 	return c.imageCleaner.Run()
