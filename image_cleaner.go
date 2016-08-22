@@ -1,7 +1,6 @@
 package gcloudcleanup
 
 import (
-	"fmt"
 	"math/rand"
 	"net/url"
 	"strings"
@@ -19,7 +18,6 @@ type imageCleaner struct {
 	projectID   string
 	jobBoardURL string
 	filters     []string
-	imageLimit  int
 
 	noop bool
 
@@ -41,7 +39,6 @@ func newImageCleaner(
 	rateLimitDuration time.Duration,
 	projectID,
 	jobBoardURL string,
-	imageLimit int,
 	filters []string,
 	noop bool,
 ) *imageCleaner {
@@ -51,7 +48,6 @@ func newImageCleaner(
 
 		projectID:   projectID,
 		jobBoardURL: jobBoardURL,
-		imageLimit:  imageLimit,
 		filters:     filters,
 
 		noop: noop,
@@ -147,7 +143,6 @@ func (ic *imageCleaner) fetchRegisteredImages() (map[string]bool, error) {
 	qs.Set("infra", "gce")
 	qs.Set("fields[images]", "name")
 	qs.Set("name", nameFilter)
-	qs.Set("limit", fmt.Sprintf("%v", ic.imageLimit))
 
 	u, err := url.Parse(ic.jobBoardURL)
 	u.Path = "/images"
@@ -164,11 +159,6 @@ func (ic *imageCleaner) fetchRegisteredImages() (map[string]bool, error) {
 
 	if len(imageResp.Data) == 0 {
 		return images, err
-	}
-
-	if len(imageResp.Data) == ic.imageLimit {
-		return images,
-			fmt.Errorf("image count matches limit of %v, aborting", ic.imageLimit)
 	}
 
 	for _, imgRef := range imageResp.Data {

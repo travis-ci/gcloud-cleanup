@@ -1,6 +1,6 @@
 language: go
 
-go: 1.6.3
+go: 1.7
 
 dist: trusty
 
@@ -9,6 +9,8 @@ group: edge
 env:
   global:
   - GO15VENDOREXPERIMENT='1'
+  - TRAVIS_COMMIT_SHORT="$(echo $TRAVIS_COMMIT | cut -b1-7)"
+  - TRAVIS_COMMIT_LESSSHORT="$(echo $TRAVIS_COMMIT | cut -b1-9)"
 
 addons:
   artifacts:
@@ -19,6 +21,8 @@ addons:
     target_paths:
     - travis-ci/gcloud-cleanup/$TRAVIS_BRANCH
     - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT
+    - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT_SHORT
+    - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT_LESSSHORT
 
 install:
 - make prereqs

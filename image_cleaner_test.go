@@ -14,7 +14,7 @@ func TestNewImageCleaner(t *testing.T) {
 	ratelimit := ratelimit.NewNullRateLimiter()
 
 	ic := newImageCleaner(nil, log, ratelimit, 10, time.Second,
-		"foo-project", "http://foo.example.com", 20,
+		"foo-project", "http://foo.example.com",
 		[]string{"name eq ^travis-test.*"}, true)
 
 	assert.NotNil(t, ic)
@@ -22,6 +22,5 @@ func TestNewImageCleaner(t *testing.T) {
 	assert.NotNil(t, ic.log)
 	assert.Equal(t, "foo-project", ic.projectID)
 	assert.Equal(t, "http://foo.example.com", ic.jobBoardURL)
-	assert.Equal(t, 20, ic.imageLimit)
 	assert.Equal(t, []string{"name eq ^travis-test.*"}, ic.filters)
 }
