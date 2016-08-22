@@ -10,6 +10,10 @@ TR ?= tr
 UNAME ?= uname
 XARGS ?= xargs
 
+ifeq ($(shell uname), Darwin)
+	SED = gsed
+endif
+
 PACKAGE_CHECKOUT := $(shell echo ${PWD})
 PACKAGE := github.com/travis-ci/gcloud-cleanup
 ALL_PACKAGES := $(PACKAGE) $(PACKAGE)/cmd/...
@@ -74,6 +78,10 @@ deps: vendor/.deps-fetched
 .PHONY: prereqs
 prereqs:
 	$(GO) get github.com/FiloSottile/gvt
+
+.PHONY: copyright
+copyright:
+	$(SED) -i "s/^Copyright.*Travis CI/Copyright (c) $(shell date +%Y) Travis CI/" LICENSE
 
 vendor/.deps-fetched:
 	$(GVT) rebuild

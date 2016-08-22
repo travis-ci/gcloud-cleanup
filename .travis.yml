@@ -29,6 +29,9 @@ install:
 
 script:
 - travis_retry make deps
+- make copyright
+- git diff --exit-code
+- git diff --cached --exit-code
 - make crossbuild
 
 after_script:
