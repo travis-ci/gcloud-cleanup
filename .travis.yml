@@ -32,7 +32,7 @@ script:
 - make copyright
 - git diff --exit-code
 - git diff --cached --exit-code
-- make crossbuild
+- make
 
 after_success:
 - bash <(curl -s https://codecov.io/bash)
