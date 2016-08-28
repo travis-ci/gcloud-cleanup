@@ -214,7 +214,7 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletio
 
 func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
 	if ic.noop {
-		ic.log.WithField("instance", inst.Name).Debug("not really deleting image")
+		ic.log.WithField("instance", inst.Name).Debug("not really deleting instance")
 		return nil
 	}
 

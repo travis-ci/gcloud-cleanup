@@ -18,14 +18,6 @@
 			"notests": true
 		},
 		{
-			"importpath": "github.com/urfave/cli",
-			"repository": "https://github.com/urfave/cli",
-			"vcs": "git",
-			"revision": "168c95418e66e019fe17b8f4f5c45aa62ff80e23",
-			"branch": "master",
-			"notests": true
-		},
-		{
 			"importpath": "github.com/davecgh/go-spew/spew",
 			"repository": "https://github.com/davecgh/go-spew",
 			"vcs": "git",
@@ -146,6 +138,14 @@
 			"vcs": "git",
 			"revision": "31e6fd4bd5a98d8ee7673d24bc54ec73c31810dd",
 			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "gopkg.in/urfave/cli.v2",
+			"repository": "https://github.com/urfave/cli",
+			"vcs": "git",
+			"revision": "a095a5a89605c01901cebf5c889c68229b935225",
+			"branch": "v2",
 			"notests": true
 		}
 	]
