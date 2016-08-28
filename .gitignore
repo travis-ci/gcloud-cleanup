@@ -3,3 +3,4 @@ vendor/*
 !vendor/manifest
 build/
 *coverprofile
+coverage.html

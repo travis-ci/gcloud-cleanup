@@ -1,6 +1,7 @@
 package gcloudcleanup
 
 import (
+	"fmt"
 	"math/rand"
 	"net/url"
 	"strings"
@@ -75,6 +76,7 @@ func (ic *imageCleaner) Run() error {
 	}
 
 	ic.l2met("gauge#images.registered", len(registeredImages), "fetched registered images")
+	ic.log.WithField("registered_images", fmt.Sprintf("%#v", registeredImages)).Debug("huh")
 
 	imgChan := make(chan *imageDeletionRequest)
 	errChan := make(chan error)

@@ -34,5 +34,6 @@ script:
 - git diff --cached --exit-code
 - make crossbuild
 
-after_script:
+after_success:
+- bash <(curl -s https://codecov.io/bash)
 - tar -czvf build.tar.gz build Procfile Makefile
