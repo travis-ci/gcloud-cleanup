@@ -32,7 +32,8 @@ script:
 - make copyright
 - git diff --exit-code
 - git diff --cached --exit-code
-- make crossbuild
+- make
 
-after_script:
+after_success:
+- bash <(curl -s https://codecov.io/bash)
 - tar -czvf build.tar.gz build Procfile Makefile

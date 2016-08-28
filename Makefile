@@ -1,19 +1,4 @@
-DATE ?= date
-FIND ?= find
-GIT ?= git
-GO ?= go
-GREP ?= grep
-GVT ?= gvt
-SED ?= sed
-TOUCH ?= touch
-TR ?= tr
-UNAME ?= uname
-XARGS ?= xargs
-
-ifeq ($(shell uname), Darwin)
-	SED = gsed
-endif
-
+include .shellbits.mk
 PACKAGE_CHECKOUT := $(shell echo ${PWD})
 PACKAGE := github.com/travis-ci/gcloud-cleanup
 ALL_PACKAGES := $(PACKAGE) $(PACKAGE)/cmd/...
@@ -42,20 +27,28 @@ GOBUILD_LDFLAGS ?= \
 export GO15VENDOREXPERIMENT
 
 .PHONY: all
-all: clean test crossbuild
+all: clean build test coverage.html crossbuild
 
 .PHONY: clean
 clean:
 	$(RM) $(GOPATH)/bin/gcloud-cleanup
-	$(RM) -rv ./build
-	$(FIND) $(GOPATH)/pkg -wholename "*$(PACKAGE)*.a" | $(XARGS) $(RM) -v
+	$(RM) -rv ./build coverage.html coverage.txt
+	$(FIND) $(GOPATH)/pkg -wholename "*$(PACKAGE)*.a" -delete
 
 .PHONY: test
-test:
+test: .test coverage.txt coverage.html
+
+coverage.txt: .test
+
+.PHONY: .test
+.test:
 	$(GO) test -x -v -cover \
 		-coverpkg $(PACKAGE) \
-		-coverprofile package.coverprofile \
+		-coverprofile coverage.txt \
 		$(PACKAGE)
+
+coverage.html: coverage.txt
+	$(GO) tool cover -html=$^ -o $@
 
 .PHONY: build
 build: deps
