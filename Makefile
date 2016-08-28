@@ -32,22 +32,22 @@ all: clean build test coverage.html crossbuild
 .PHONY: clean
 clean:
 	$(RM) $(GOPATH)/bin/gcloud-cleanup
-	$(RM) -rv ./build coverage.html package.coverprofile
+	$(RM) -rv ./build coverage.html coverage.txt
 	$(FIND) $(GOPATH)/pkg -wholename "*$(PACKAGE)*.a" -delete
 
 .PHONY: test
-test: .test package.coverprofile coverage.html
+test: .test coverage.txt coverage.html
 
-package.coverprofile: .test
+coverage.txt: .test
 
 .PHONY: .test
 .test:
 	$(GO) test -x -v -cover \
 		-coverpkg $(PACKAGE) \
-		-coverprofile package.coverprofile \
+		-coverprofile coverage.txt \
 		$(PACKAGE)
 
-coverage.html: package.coverprofile
+coverage.html: coverage.txt
 	$(GO) tool cover -html=$^ -o $@
 
 .PHONY: build

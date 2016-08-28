@@ -2,5 +2,5 @@
 vendor/*
 !vendor/manifest
 build/
-*coverprofile
+coverage.txt
 coverage.html
