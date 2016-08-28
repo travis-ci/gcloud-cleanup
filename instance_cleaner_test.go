@@ -13,7 +13,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/travis-ci/worker/ratelimit"
+	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )
 
 func TestNewInstanceCleaner(t *testing.T) {
