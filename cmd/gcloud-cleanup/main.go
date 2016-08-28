@@ -4,15 +4,16 @@ import (
 	"os"
 
 	"github.com/travis-ci/gcloud-cleanup"
-	"github.com/urfave/cli"
+	"gopkg.in/urfave/cli.v2"
 )
 
 func main() {
-	app := cli.NewApp()
-	app.Version = gcloudcleanup.VersionString
-	app.Flags = gcloudcleanup.Flags
-	app.Action = func(c *cli.Context) {
-		gcloudcleanup.NewCLI(c).Run()
+	app := &cli.App{
+		Version: gcloudcleanup.VersionString,
+		Flags:   gcloudcleanup.Flags,
+		Action: func(c *cli.Context) error {
+			return gcloudcleanup.NewCLI(c).Run()
+		},
 	}
 	app.Run(os.Args)
 }

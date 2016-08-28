@@ -9,7 +9,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
-	"github.com/urfave/cli"
+	"gopkg.in/urfave/cli.v2"
 )
 
 var (
@@ -34,13 +34,13 @@ func NewCLI(c *cli.Context) *CLI {
 	return &CLI{c: c, log: log}
 }
 
-func (c *CLI) Run() {
+func (c *CLI) Run() error {
 	c.setupLogger()
 	c.setupRateLimiter()
 
 	fields := logrus.Fields{}
 
-	for _, name := range c.c.GlobalFlagNames() {
+	for _, name := range c.c.FlagNames() {
 		fields[name] = c.c.Generic(name)
 	}
 
@@ -97,6 +97,7 @@ func (c *CLI) Run() {
 		c.log.WithField("duration", sleepDur).Info("sleeping")
 		time.Sleep(sleepDur)
 	}
+	return nil
 }
 
 func (c *CLI) setupComputeService(accountJSON string) error {
