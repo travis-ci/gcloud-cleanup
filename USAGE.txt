@@ -1,0 +1,31 @@
+NAME:
+   gcloud-cleanup - Google Compute Platform cleaner thingy
+
+USAGE:
+   gcloud-cleanup [global options] command [command options] [arguments...]
+
+COMMANDS:
+     help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --account-json value          file path to or json blob of GCE account stuff (default: "tmp/gce.json") [$GCLOUD_CLEANUP_ACCOUNT_JSON, $GOOGLE_CREDENTIALS]
+   --project-id value            name of GCE project (default: "fancy-project-name-there") [$GCLOUD_CLEANUP_PROJECT_ID, $GCLOUD_PROJECT]
+   --instance-max-age value      max age for an instance to be considered deletable (default: 3h0m0s) [$GCLOUD_CLEANUP_INSTANCE_MAX_AGE]
+   --instance-filters value      filters used when fetching instances for deletion (default: "name eq ^ohai-test.*") [$GCLOUD_CLEANUP_INSTANCE_FILTERS]
+   --image-filters value         filters used when fetching images for deletion [$GCLOUD_CLEANUP_IMAGE_FILTERS]
+   --entities value              entities to clean up [$GCLOUD_CLEANUP_ENTITIES]
+   --loop-sleep value            sleep time between loops (default: 5m0s) [$GCLOUD_CLEANUP_LOOP_SLEEP]
+   --once                        only run once, no looping (default: false) [$GCLOUD_CLEANUP_ONCE]
+   --rate-limit-redis-url value  URL to Redis instance to use for rate limiting (default: "redis://auth:auth@somewhere.in.aws.example.com:6979") [$GCLOUD_CLEANUP_RATE_LIMIT_REDIS_URL]
+   --rate-limit-prefix value     prefix for the rate limit key in Redis (default: "rate-limit-gcloud-cleanup") [$GCLOUD_CLEANUP_RATE_LIMIT_PREFIX]
+   --rate-limit-max-calls value  number of calls per duration to let through to the GCE API (default: 2) [$GCLOUD_CLEANUP_RATE_LIMIT_MAX_CALLS]
+   --rate-limit-duration value   interval in which to let max-calls through to the GCE API (default: 1s) [$GCLOUD_CLEANUP_RATE_LIMIT_DURATION]
+   --job-board-url value         url to job-board instance for fetching registered images (default: "https://auth:auth@job-board-somewhere.example.com") [$GCLOUD_CLEANUP_JOB_BOARD_URL, $JOB_BOARD_URL]
+   --debug                       output more stuff (default: false) [$GCLOUD_CLEANUP_DEBUG, $DEBUG]
+   --noop                        don't do mutative stuff (default: false) [$GCLOUD_CLEANUP_NOOP, $NOOP]
+   --help, -h                    show help (default: false)
+   --version, -v                 print the version (default: false)
+
+COPYRIGHT:
+   © 2016 Travis CI
+

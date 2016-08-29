@@ -33,6 +33,9 @@ script:
 - git diff --exit-code
 - git diff --cached --exit-code
 - make
+- make USAGE.txt
+- git diff --exit-code
+- git diff --cached --exit-code
 
 after_success:
 - bash <(curl -s https://codecov.io/bash)
