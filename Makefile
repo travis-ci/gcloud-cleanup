@@ -74,7 +74,7 @@ prereqs:
 
 .PHONY: copyright
 copyright:
-	$(SED) -i "s/^Copyright.*Travis CI/Copyright (c) $(shell date +%Y) Travis CI/" LICENSE
+	$(SED) -i "s/^Copyright.*Travis CI/Copyright © $(shell date +%Y) Travis CI/" LICENSE
 
 USAGE.txt: build/$(OS)/$(ARCH)/gcloud-cleanup
 	source .example.env && \
