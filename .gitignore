@@ -1,4 +1,5 @@
 .*env
+!.example.env
 vendor/*
 !vendor/manifest
 build/

@@ -9,8 +9,10 @@ import (
 
 func main() {
 	app := &cli.App{
-		Version: gcloudcleanup.VersionString,
-		Flags:   gcloudcleanup.Flags,
+		Usage:     "Google Compute Platform cleaner thingy",
+		Version:   gcloudcleanup.VersionString,
+		Copyright: gcloudcleanup.CopyrightString,
+		Flags:     gcloudcleanup.Flags,
 		Action: func(c *cli.Context) error {
 			return gcloudcleanup.NewCLI(c).Run()
 		},
