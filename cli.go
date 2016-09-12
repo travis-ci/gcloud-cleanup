@@ -1,7 +1,7 @@
 package gcloudcleanup
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 	"time"
 
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	errInvalidInstancesMaxAge = fmt.Errorf("invalid max age")
+	errInvalidInstancesMaxAge = errors.New("invalid max age")
 )
 
 type CLI struct {
@@ -113,7 +113,13 @@ func (c *CLI) setupLogger() {
 }
 
 func (c *CLI) setupRateLimiter() {
-	c.rateLimiter = ratelimit.NewRateLimiter(c.c.String("rate-limit-redis-url"), c.c.String("rate-limit-prefix"))
+	if c.c.String("rate-limit-redis-url") == "" {
+		c.rateLimiter = ratelimit.NewNullRateLimiter()
+		return
+	}
+	c.rateLimiter = ratelimit.NewRateLimiter(
+		c.c.String("rate-limit-redis-url"),
+		c.c.String("rate-limit-prefix"))
 }
 
 func (c *CLI) cleanupInstances() error {
