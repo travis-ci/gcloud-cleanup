@@ -22,17 +22,17 @@ func ReportMemstatsMetrics() {
 
 		now := time.Now()
 
-		metrics.GetOrRegisterGauge("travis.jupiter-brain.goroutines", metrics.DefaultRegistry).Update(int64(runtime.NumGoroutine()))
-		metrics.GetOrRegisterGauge("travis.jupiter-brain.memory.allocated", metrics.DefaultRegistry).Update(int64(memStats.Alloc))
-		metrics.GetOrRegisterGauge("travis.jupiter-brain.memory.mallocs", metrics.DefaultRegistry).Update(int64(memStats.Mallocs))
-		metrics.GetOrRegisterGauge("travis.jupiter-brain.memory.frees", metrics.DefaultRegistry).Update(int64(memStats.Frees))
-		metrics.GetOrRegisterGauge("travis.jupiter-brain.memory.gc.total_pause", metrics.DefaultRegistry).Update(int64(memStats.PauseTotalNs))
-		metrics.GetOrRegisterGauge("travis.jupiter-brain.memory.gc.heap", metrics.DefaultRegistry).Update(int64(memStats.HeapAlloc))
-		metrics.GetOrRegisterGauge("travis.jupiter-brain.memory.gc.stack", metrics.DefaultRegistry).Update(int64(memStats.StackInuse))
+		metrics.GetOrRegisterGauge("travis.gcloud-cleanup.goroutines", metrics.DefaultRegistry).Update(int64(runtime.NumGoroutine()))
+		metrics.GetOrRegisterGauge("travis.gcloud-cleanup.memory.allocated", metrics.DefaultRegistry).Update(int64(memStats.Alloc))
+		metrics.GetOrRegisterGauge("travis.gcloud-cleanup.memory.mallocs", metrics.DefaultRegistry).Update(int64(memStats.Mallocs))
+		metrics.GetOrRegisterGauge("travis.gcloud-cleanup.memory.frees", metrics.DefaultRegistry).Update(int64(memStats.Frees))
+		metrics.GetOrRegisterGauge("travis.gcloud-cleanup.memory.gc.total_pause", metrics.DefaultRegistry).Update(int64(memStats.PauseTotalNs))
+		metrics.GetOrRegisterGauge("travis.gcloud-cleanup.memory.gc.heap", metrics.DefaultRegistry).Update(int64(memStats.HeapAlloc))
+		metrics.GetOrRegisterGauge("travis.gcloud-cleanup.memory.gc.stack", metrics.DefaultRegistry).Update(int64(memStats.StackInuse))
 
 		if lastPauseNs > 0 {
 			pauseSinceLastSample := memStats.PauseTotalNs - lastPauseNs
-			metrics.GetOrRegisterGauge("travis.jupiter-brain.memory.gc.pause_per_second", metrics.DefaultRegistry).Update(int64(float64(pauseSinceLastSample) / sleep.Seconds()))
+			metrics.GetOrRegisterGauge("travis.gcloud-cleanup.memory.gc.pause_per_second", metrics.DefaultRegistry).Update(int64(float64(pauseSinceLastSample) / sleep.Seconds()))
 		}
 		lastPauseNs = memStats.PauseTotalNs
 
@@ -40,7 +40,7 @@ func ReportMemstatsMetrics() {
 		if lastNumGC > 0 {
 			diff := float64(countGC)
 			diffTime := now.Sub(lastSampleTime).Seconds()
-			metrics.GetOrRegisterGauge("travis.jupiter-brain.memory.gc.gc_per_second", metrics.DefaultRegistry).Update(int64(diff / diffTime))
+			metrics.GetOrRegisterGauge("travis.gcloud-cleanup.memory.gc.gc_per_second", metrics.DefaultRegistry).Update(int64(diff / diffTime))
 		}
 
 		if countGC > 0 {
@@ -51,7 +51,7 @@ func ReportMemstatsMetrics() {
 			for i := 0; i < countGC; i++ {
 				idx := int((memStats.NumGC-uint32(i))+255) % 256
 				pause := time.Duration(memStats.PauseNs[idx])
-				metrics.GetOrRegisterTimer("travis.jupiter-brain.memory.gc.pause", metrics.DefaultRegistry).Update(pause)
+				metrics.GetOrRegisterTimer("travis.gcloud-cleanup.memory.gc.pause", metrics.DefaultRegistry).Update(pause)
 			}
 		}
 
