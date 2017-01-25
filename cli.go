@@ -2,14 +2,20 @@ package gcloudcleanup
 
 import (
 	"errors"
+	"log"
+	"os"
 	"strings"
 	"time"
 
 	"google.golang.org/api/compute/v1"
+	"gopkg.in/urfave/cli.v2"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/mihasya/go-metrics-librato"
+	"github.com/rcrowley/go-metrics"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
-	"gopkg.in/urfave/cli.v2"
+	"github.com/travis-ci/worker/config"
+	travismetrics "github.com/travis-ci/worker/metrics"
 )
 
 var (
@@ -24,6 +30,8 @@ type CLI struct {
 
 	instanceCleaner *instanceCleaner
 	imageCleaner    *imageCleaner
+
+	Config *config.Config
 }
 
 func NewCLI(c *cli.Context) *CLI {
@@ -45,6 +53,8 @@ func (c *CLI) Run() error {
 	}
 
 	c.log.WithFields(fields).Debug("configuration")
+
+	c.setupMetrics()
 
 	err := c.setupComputeService(c.c.String("account-json"))
 	if err != nil {
@@ -156,6 +166,23 @@ func (c *CLI) cleanupInstances() error {
 	c.instanceCleaner.CutoffTime = time.Now().UTC().Add(-1 * c.c.Duration("instance-max-age"))
 
 	return c.instanceCleaner.Run()
+}
+
+func (i *CLI) setupMetrics() {
+	go travismetrics.ReportMemstatsMetrics()
+
+	if i.Config.LibratoEmail != "" && i.Config.LibratoToken != "" && i.Config.LibratoSource != "" {
+		i.logger.Info("starting librato metrics reporter")
+
+		go librato.Librato(metrics.DefaultRegistry, time.Minute,
+			i.Config.LibratoEmail, i.Config.LibratoToken, i.Config.LibratoSource,
+			[]float64{0.50, 0.75, 0.90, 0.95, 0.99, 0.999, 1.0}, time.Millisecond)
+	} else if !i.c.Bool("silence-metrics") {
+		i.logger.Info("starting logger metrics reporter")
+
+		go metrics.Log(metrics.DefaultRegistry, time.Minute,
+			log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
+	}
 }
 
 func (c *CLI) cleanupImages() error {
