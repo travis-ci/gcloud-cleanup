@@ -27,5 +27,5 @@ GLOBAL OPTIONS:
    --version, -v                 print the version (default: false)
 
 COPYRIGHT:
-   © 2016 Travis CI
+   © 2017 Travis CI
 
