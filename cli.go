@@ -12,8 +12,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/mihasya/go-metrics-librato"
 	"github.com/rcrowley/go-metrics"
+	travismetrics "github.com/travis-ci/gcloud-cleanup/metrics"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
-	travismetrics "github.com/travis-ci/worker/metrics"
 )
 
 var (
