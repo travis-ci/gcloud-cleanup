@@ -2,7 +2,6 @@ package gcloudcleanup
 
 import (
 	"errors"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"github.com/mihasya/go-metrics-librato"
 	"github.com/rcrowley/go-metrics"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
-	"github.com/travis-ci/worker/config"
 	travismetrics "github.com/travis-ci/worker/metrics"
 )
 
@@ -30,8 +28,6 @@ type CLI struct {
 
 	instanceCleaner *instanceCleaner
 	imageCleaner    *imageCleaner
-
-	Config *config.Config
 }
 
 func NewCLI(c *cli.Context) *CLI {
@@ -171,17 +167,12 @@ func (c *CLI) cleanupInstances() error {
 func (i *CLI) setupMetrics() {
 	go travismetrics.ReportMemstatsMetrics()
 
-	if i.Config.LibratoEmail != "" && i.Config.LibratoToken != "" && i.Config.LibratoSource != "" {
-		i.logger.Info("starting librato metrics reporter")
+	if os.Getenv("LIBRATO_EMAIL") != "" && os.Getenv("LIBRATO_TOKEN") != "" && os.Getenv("LIBRATO_SOURCE") != "" {
+		i.log.Info("starting librato metrics reporter")
 
 		go librato.Librato(metrics.DefaultRegistry, time.Minute,
-			i.Config.LibratoEmail, i.Config.LibratoToken, i.Config.LibratoSource,
+			os.Getenv("LIBRATO_EMAIL"), os.Getenv("LIBRATO_TOKEN"), os.Getenv("LIBRATO_SOURCE"),
 			[]float64{0.50, 0.75, 0.90, 0.95, 0.99, 0.999, 1.0}, time.Millisecond)
-	} else if !i.c.Bool("silence-metrics") {
-		i.logger.Info("starting logger metrics reporter")
-
-		go metrics.Log(metrics.DefaultRegistry, time.Minute,
-			log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
 	}
 }
 
