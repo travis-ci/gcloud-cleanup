@@ -107,7 +107,7 @@ func (ic *instanceCleaner) Run() error {
 		}).Info("deleted")
 	}
 
-	metrics.Gauge("travis.gcloud-cleanup.instances.deleted", int64(nDeleted))
+	metrics.NewRegisteredCounter("travis.gcloud-cleanup.instances.deleted", int64(nDeleted))
 	ic.l2met("measure#instances.deleted", nDeleted, "done running instance cleanup")
 
 	return nil
