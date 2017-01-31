@@ -27,22 +27,9 @@ func Gauge(name string, value int64) {
 	metrics.GetOrRegisterGauge(name, metrics.DefaultRegistry).Update(value)
 }
 
-// Counters hold an int64 value that can be incremented and decremented.
-type Counter interface {
-	Clear()
-	Count() int64
-	Dec(int64)
-	Inc(int64)
-	Snapshot() Counter
-}
-
-// GetOrRegisterCounter returns an existing Counter or constructs and registers
+// Counter returns an existing Counter or constructs and registers
 // a new StandardCounter.
-func GetOrRegisterCounter(name string, r Registry) Counter {
-	if nil == r {
-		r = DefaultRegistry
-	}
-	return r.GetOrRegister(name, NewCounter).(Counter)  {
-	metrics.GetOrRegisterCounter(name, metrics.DefaultRegistry).Update(r)
+func Counter(name string, value int64) {
+	metrics.GetOrRegisterCounter(name, metrics.DefaultRegistry).Inc(value)
 
 }
