@@ -6,9 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
-	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 	"google.golang.org/api/compute/v1"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/travis-ci/gcloud-cleanup/metrics"
+	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )
 
 type imageCleaner struct {
@@ -118,6 +120,7 @@ func (ic *imageCleaner) Run() error {
 		}).Info("deleted")
 	}
 
+	metrics.Gauge("travis.gcloud-cleanup.images.deleted", int64(nDeleted))
 	ic.l2met("measure#images.deleted", nDeleted, "done running image cleanup")
 	return nil
 }

@@ -4,9 +4,10 @@ import (
 	"reflect"
 	"testing"
 
+	"gopkg.in/urfave/cli.v2"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/urfave/cli.v2"
 )
 
 func TestNewCLI(t *testing.T) {

@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
-	"github.com/travis-ci/gcloud-cleanup/ratelimit"
-
 	"google.golang.org/api/compute/v1"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/travis-ci/gcloud-cleanup/metrics"
+	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )
 
 type instanceCleaner struct {
@@ -106,6 +107,7 @@ func (ic *instanceCleaner) Run() error {
 		}).Info("deleted")
 	}
 
+	metrics.Counter("travis.gcloud-cleanup.instances.deleted", int64(nDeleted))
 	ic.l2met("measure#instances.deleted", nDeleted, "done running instance cleanup")
 
 	return nil
