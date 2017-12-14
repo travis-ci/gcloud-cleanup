@@ -54,7 +54,3 @@ us from being rate limited, we throttle the amount of requests we make.
 
 **NOTE**: the `./ratelimit` subpacakage is a vendored copy from
 [travis-ci/worker](https://github.com/travis-ci/worker).
-
-## Config parameters
-
-Viewable in [USAGE.txt](./USAGE.txt).

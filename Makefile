@@ -73,10 +73,6 @@ prereqs:
 copyright:
 	$(SED) -i "s/^Copyright.*Travis CI/Copyright © $(shell date +%Y) Travis CI/" LICENSE
 
-USAGE.txt: build/$(OS)/$(ARCH)/gcloud-cleanup
-	source .example.env && \
-	$^ --help | sed '/VERSION/ { N; N; d; };s/  *$$//g' >$@
-
 vendor/.deps-fetched:
 	$(GVT) rebuild
 	$(TOUCH) $@
