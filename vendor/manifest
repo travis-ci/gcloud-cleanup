@@ -36,12 +36,28 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/rcrowley/go-metrics",
+			"repository": "https://github.com/rcrowley/go-metrics",
+			"vcs": "git",
+			"revision": "cfa5a85e9f0abbdf1701b59082c36fc7bff10759",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/garyburd/redigo/redis",
 			"repository": "https://github.com/garyburd/redigo",
 			"vcs": "git",
 			"revision": "b8dc90050f24c1a73a52f107f3f575be67b21b7c",
 			"branch": "master",
 			"path": "/redis",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/mihasya/go-metrics-librato",
+			"repository": "https://github.com/mihasya/go-metrics-librato",
+			"vcs": "git",
+			"revision": "0ec8d5e8bf04a48fc5c96792bfd016b08afdabad",
+			"branch": "master",
 			"notests": true
 		},
 		{
