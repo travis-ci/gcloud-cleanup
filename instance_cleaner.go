@@ -97,6 +97,7 @@ func (ic *instanceCleaner) Run() error {
 				"err":      err,
 				"instance": req.Instance.Name,
 			}).Warn("failed to delete instance")
+			continue
 		}
 
 		nDeleted++
