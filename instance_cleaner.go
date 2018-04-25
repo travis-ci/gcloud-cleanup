@@ -76,9 +76,6 @@ func (ic *instanceCleaner) Run() error {
 	go ic.fetchInstancesToDelete(instChan, errChan)
 	go func() {
 		for err := range errChan {
-			if err == nil {
-				continue
-			}
 			ic.log.WithField("err", err).Warn("error during instance fetch")
 		}
 	}()
@@ -86,10 +83,6 @@ func (ic *instanceCleaner) Run() error {
 	nDeleted := 0
 
 	for req := range instChan {
-		if req == nil {
-			break
-		}
-
 		err := ic.deleteInstance(req.Instance)
 
 		if err != nil {
@@ -115,6 +108,9 @@ func (ic *instanceCleaner) Run() error {
 }
 
 func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletionRequest, errChan chan error) {
+	defer close(errChan)
+	defer close(instChan)
+
 	listCall := ic.cs.Instances.AggregatedList(ic.projectID)
 	for _, filter := range ic.filters {
 		listCall.Filter(filter)
@@ -211,8 +207,6 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletio
 	}
 
 	ic.l2met("gauge#instances.count", nInstances, "done checking all instances")
-	instChan <- nil
-	errChan <- nil
 }
 
 func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
