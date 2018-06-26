@@ -1,12 +1,15 @@
 package gcloudcleanup
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"math/rand"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"cloud.google.com/go/storage"
 	"google.golang.org/api/compute/v1"
 
 	"github.com/Sirupsen/logrus"
@@ -14,14 +17,23 @@ import (
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )
 
+var (
+	errNoStorageClient = fmt.Errorf("no storage client available")
+)
+
 type instanceCleaner struct {
+	ctx context.Context
 	cs  *compute.Service
+	sc  *storage.Client
 	log *logrus.Entry
 
 	projectID string
 	filters   []string
 
 	noop bool
+
+	archiveSerial bool
+	archiveBucket string
 
 	CutoffTime time.Time
 
@@ -33,34 +45,6 @@ type instanceCleaner struct {
 type instanceDeletionRequest struct {
 	Instance *compute.Instance
 	Reason   string
-}
-
-func newInstanceCleaner(
-	cs *compute.Service,
-	log *logrus.Logger,
-	rateLimiter ratelimit.RateLimiter,
-	rateLimitMaxCalls uint64,
-	rateLimitDuration time.Duration,
-	cutoffTime time.Time,
-	projectID string,
-	filters []string,
-	noop bool,
-) *instanceCleaner {
-	return &instanceCleaner{
-		cs:  cs,
-		log: log.WithField("component", "instance_cleaner"),
-
-		projectID: projectID,
-		filters:   filters,
-
-		noop: noop,
-
-		CutoffTime: cutoffTime,
-
-		rateLimiter:       rateLimiter,
-		rateLimitMaxCalls: rateLimitMaxCalls,
-		rateLimitDuration: rateLimitDuration,
-	}
 }
 
 func (ic *instanceCleaner) Run() error {
@@ -215,6 +199,14 @@ func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
 		return nil
 	}
 
+	if ic.archiveSerial {
+		ic.log.WithField("instance", inst.Name).Debug("archiving serial port output")
+		err := ic.archiveSerialConsoleOutput(inst)
+		if err != nil {
+			return err
+		}
+	}
+
 	ic.apiRateLimit()
 	_, err := ic.cs.Instances.Delete(ic.projectID, filepath.Base(inst.Zone), inst.Name).Do()
 	return err
@@ -222,6 +214,55 @@ func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
 
 func (ic *instanceCleaner) l2met(name string, n int, msg string) {
 	ic.log.WithField(name, n).Info(msg)
+}
+
+func (ic *instanceCleaner) archiveSerialConsoleOutput(inst *compute.Instance) error {
+	if ic.sc == nil {
+		return errNoStorageClient
+	}
+
+	accum := ""
+	lastPos := int64(0)
+
+	for {
+		ic.apiRateLimit()
+		resp, err := ic.cs.Instances.GetSerialPortOutput(
+			ic.projectID, filepath.Base(inst.Zone), inst.Name).Start(lastPos).Context(ic.ctx).Do()
+
+		if err != nil {
+			return err
+		}
+
+		accum += resp.Contents
+		if lastPos == resp.Next {
+			break
+		}
+		lastPos = resp.Next
+	}
+
+	key := fmt.Sprintf("serial-console-output/%s.txt", inst.Name)
+	obj := ic.sc.Bucket(ic.archiveBucket).Object(key)
+	wc := obj.NewWriter(ic.ctx)
+
+	_, err := io.Copy(wc, strings.NewReader(accum))
+	if err != nil {
+		ic.log.WithFields(logrus.Fields{
+			"err":      err,
+			"instance": inst.Name,
+		}).Warn("failed to copy console output to archive")
+		return err
+	}
+
+	err = wc.Close()
+	if err != nil {
+		ic.log.WithFields(logrus.Fields{
+			"err":      err,
+			"instance": inst.Name,
+		}).Warn("failed to close console output upload writer")
+		return err
+	}
+
+	return nil
 }
 
 func (ic *instanceCleaner) apiRateLimit() error {

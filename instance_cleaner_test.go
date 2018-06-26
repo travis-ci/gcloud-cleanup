@@ -21,9 +21,16 @@ func TestNewInstanceCleaner(t *testing.T) {
 	rl := ratelimit.NewNullRateLimiter()
 	cutoffTime := time.Now().Add(-1 * time.Hour)
 
-	ic := newInstanceCleaner(nil, log, rl, 10, time.Second,
-		cutoffTime, "foo-project",
-		[]string{"name eq ^test.*"}, true)
+	ic := &instanceCleaner{
+		log:               log.WithField("test", "yep"),
+		rateLimiter:       rl,
+		rateLimitMaxCalls: 10,
+		rateLimitDuration: time.Second,
+		CutoffTime:        cutoffTime,
+		projectID:         "foo-project",
+		filters:           []string{"name eq ^test.*"},
+		noop:              true,
+	}
 
 	assert.NotNil(t, ic)
 	assert.NotNil(t, ic.log)
@@ -100,9 +107,17 @@ func TestInstanceCleaner_Run(t *testing.T) {
 	rl := ratelimit.NewNullRateLimiter()
 	cutoffTime := time.Now().Add(-1 * time.Hour)
 
-	ic := newInstanceCleaner(cs, log, rl, 10, time.Second,
-		cutoffTime, "foo-project",
-		[]string{"name eq ^test.*"}, false)
+	ic := &instanceCleaner{
+		cs:                cs,
+		log:               log.WithField("test", "yep"),
+		rateLimiter:       rl,
+		rateLimitMaxCalls: 10,
+		rateLimitDuration: time.Second,
+		CutoffTime:        cutoffTime,
+		projectID:         "foo-project",
+		filters:           []string{"name eq ^test.*"},
+		noop:              false,
+	}
 
 	err = ic.Run()
 	assert.Nil(t, err)
