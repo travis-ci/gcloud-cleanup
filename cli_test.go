@@ -16,6 +16,7 @@ func TestNewCLI(t *testing.T) {
 	assert.NotNil(t, c.c)
 	assert.NotNil(t, c.log)
 	assert.Nil(t, c.cs)
+	assert.Nil(t, c.sc)
 	assert.Nil(t, c.rateLimiter)
 	assert.Nil(t, c.instanceCleaner)
 	assert.Nil(t, c.imageCleaner)
@@ -71,5 +72,45 @@ func TestNewCLI_setupRateLimiter_redis(t *testing.T) {
 		},
 	}
 	app.Run([]string{"foo", "--rate-limit-redis-url", "redis://x:y@z.example.com:6379"})
+	assert.True(t, ranIt)
+}
+
+func TestNewCLI_setupStorageClient(t *testing.T) {
+	ranIt := false
+	app := &cli.App{
+		Flags: Flags,
+		Action: func(c *cli.Context) error {
+			gcccli := NewCLI(c)
+			assert.True(t, c.Bool("archive-serial"))
+			assert.Equal(t, "walrus-meme", c.String("archive-bucket"))
+			err := gcccli.setupStorageClient(`{"type":"service_account"}`)
+			assert.Nil(t, err)
+			assert.NotNil(t, gcccli.sc)
+			tp := reflect.TypeOf(gcccli.sc)
+			assert.NotEqual(t, "Client", tp.Name())
+			ranIt = true
+			return nil
+		},
+	}
+	app.Run([]string{"foo", "--archive-serial", "--archive-bucket", "walrus-meme"})
+	assert.True(t, ranIt)
+}
+
+func TestNewCLI_setupComputeService(t *testing.T) {
+	ranIt := false
+	app := &cli.App{
+		Flags: Flags,
+		Action: func(c *cli.Context) error {
+			gcccli := NewCLI(c)
+			err := gcccli.setupComputeService(`{"type":"service_account"}`)
+			assert.Nil(t, err)
+			assert.NotNil(t, gcccli.cs)
+			tp := reflect.TypeOf(gcccli.cs)
+			assert.NotEqual(t, "Service", tp.Name())
+			ranIt = true
+			return nil
+		},
+	}
+	app.Run([]string{"foo"})
 	assert.True(t, ranIt)
 }
