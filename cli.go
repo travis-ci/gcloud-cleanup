@@ -11,7 +11,7 @@ import (
 	"google.golang.org/api/compute/v1"
 	"gopkg.in/urfave/cli.v2"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/mihasya/go-metrics-librato"
 	"github.com/rcrowley/go-metrics"
 	travismetrics "github.com/travis-ci/gcloud-cleanup/metrics"

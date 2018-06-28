@@ -127,8 +127,8 @@
 			"notests": true
 		},
 		{
-			"importpath": "github.com/Sirupsen/logrus",
-			"repository": "https://github.com/Sirupsen/logrus",
+			"importpath": "github.com/sirupsen/logrus",
+			"repository": "https://github.com/sirupsen/logrus",
 			"vcs": "git",
 			"revision": "e3292c4c4d7fc915224d48222565b02f6af1900e",
 			"branch": "master",

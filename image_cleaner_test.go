@@ -11,7 +11,7 @@ import (
 
 	compute "google.golang.org/api/compute/v1"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )

@@ -12,7 +12,7 @@ import (
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/compute/v1"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/travis-ci/gcloud-cleanup/metrics"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )
