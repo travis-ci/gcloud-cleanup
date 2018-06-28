@@ -1,17 +1,21 @@
 package gcloudcleanup
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
+	"cloud.google.com/go/storage"
 	compute "google.golang.org/api/compute/v1"
+	"google.golang.org/api/option"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )
@@ -21,9 +25,18 @@ func TestNewInstanceCleaner(t *testing.T) {
 	rl := ratelimit.NewNullRateLimiter()
 	cutoffTime := time.Now().Add(-1 * time.Hour)
 
-	ic := newInstanceCleaner(nil, log, rl, 10, time.Second,
-		cutoffTime, "foo-project",
-		[]string{"name eq ^test.*"}, true)
+	ic := &instanceCleaner{
+		log:               log.WithField("test", "yep"),
+		rateLimiter:       rl,
+		rateLimitMaxCalls: 10,
+		rateLimitDuration: time.Second,
+		CutoffTime:        cutoffTime,
+		projectID:         "foo-project",
+		filters:           []string{"name eq ^test.*"},
+		noop:              true,
+		archiveSerial:     true,
+		archiveBucket:     "walrus-meme",
+	}
 
 	assert.NotNil(t, ic)
 	assert.NotNil(t, ic.log)
@@ -79,6 +92,18 @@ func TestInstanceCleaner_Run(t *testing.T) {
 			assert.Equal(t, req.Method, "DELETE")
 			fmt.Fprintf(w, `{}`)
 		})
+	mux.HandleFunc(
+		"/foo-project/zones/us-central1-a/instances/test-vm-1/serialPort",
+		func(w http.ResponseWriter, req *http.Request) {
+			assert.Equal(t, req.Method, "GET")
+			fmt.Fprintf(w, `{}`)
+		})
+	mux.HandleFunc(
+		"/foo-project/zones/us-central1-a/instances/test-vm-2/serialPort",
+		func(w http.ResponseWriter, req *http.Request) {
+			assert.Equal(t, req.Method, "GET")
+			fmt.Fprintf(w, `{}`)
+		})
 	mux.HandleFunc("/",
 		func(w http.ResponseWriter, req *http.Request) {
 			t.Errorf("Unhandled URL: %s %v", req.Method, req.URL)
@@ -92,6 +117,11 @@ func TestInstanceCleaner_Run(t *testing.T) {
 	assert.Nil(t, err)
 	cs.BasePath = srv.URL
 
+	ctx := context.Background()
+	sc, err := storage.NewClient(
+		ctx, option.WithHTTPClient(&http.Client{Transport: &fakeTransport{}}))
+	assert.Nil(t, err)
+
 	log := logrus.New()
 	log.Level = logrus.FatalLevel
 	if os.Getenv("GCLOUD_CLEANUP_TEST_DEBUG") != "" {
@@ -100,10 +130,59 @@ func TestInstanceCleaner_Run(t *testing.T) {
 	rl := ratelimit.NewNullRateLimiter()
 	cutoffTime := time.Now().Add(-1 * time.Hour)
 
-	ic := newInstanceCleaner(cs, log, rl, 10, time.Second,
-		cutoffTime, "foo-project",
-		[]string{"name eq ^test.*"}, false)
+	ic := &instanceCleaner{
+		cs:                cs,
+		sc:                sc,
+		log:               log.WithField("test", "yep"),
+		rateLimiter:       rl,
+		rateLimitMaxCalls: 10,
+		rateLimitDuration: time.Second,
+		CutoffTime:        cutoffTime,
+		projectID:         "foo-project",
+		filters:           []string{"name eq ^test.*"},
+		noop:              false,
+		archiveSerial:     true,
+		archiveBucket:     "walrus-meme",
+	}
 
 	err = ic.Run()
 	assert.Nil(t, err)
 }
+
+// {
+// lifted from:
+// https://github.com/GoogleCloudPlatform/google-cloud-go/blob/75763d24f38012ba2bb6f3966a39a6f0759a353c/storage/writer_test.go#L37-L68
+type fakeTransport struct {
+	gotReq  *http.Request
+	gotBody []byte
+	results []transportResult
+}
+
+type transportResult struct {
+	res *http.Response
+	err error
+}
+
+func (t *fakeTransport) addResult(res *http.Response, err error) {
+	t.results = append(t.results, transportResult{res, err})
+}
+
+func (t *fakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.gotReq = req
+	t.gotBody = nil
+	if req.Body != nil {
+		bytes, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+		t.gotBody = bytes
+	}
+	if len(t.results) == 0 {
+		return nil, fmt.Errorf("error handling request")
+	}
+	result := t.results[0]
+	t.results = t.results[1:]
+	return result.res, result.err
+}
+
+// }
