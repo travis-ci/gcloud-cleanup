@@ -3,6 +3,7 @@ package gcloudcleanup
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -184,6 +185,8 @@ func (c *CLI) cleanupInstances() error {
 			cs:  c.cs,
 			sc:  c.sc,
 			log: c.log.WithField("component", "instance_cleaner"),
+
+			rand: rand.New(rand.NewSource(time.Now().UnixNano())),
 
 			projectID: c.c.String("project-id"),
 			filters:   filters,

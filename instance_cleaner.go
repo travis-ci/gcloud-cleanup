@@ -27,6 +27,8 @@ type instanceCleaner struct {
 	sc  *storage.Client
 	log *logrus.Entry
 
+	rand *rand.Rand
+
 	projectID string
 	filters   []string
 
@@ -222,8 +224,7 @@ func (ic *instanceCleaner) archiveSerialConsoleOutput(inst *compute.Instance) er
 		return errNoStorageClient
 	}
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	archiveSampled := r.Float32() < (1.0 / float32(ic.archiveSampleRate))
+	archiveSampled := ic.rand.Float32() < (1.0 / float32(ic.archiveSampleRate))
 
 	if !archiveSampled {
 		ic.log.WithField("instance", inst.Name).Debug("skipping archive due to sample rate")
