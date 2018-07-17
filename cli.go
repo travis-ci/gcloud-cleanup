@@ -3,6 +3,7 @@ package gcloudcleanup
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -19,7 +20,8 @@ import (
 )
 
 var (
-	errInvalidInstancesMaxAge = errors.New("invalid max age")
+	errInvalidInstancesMaxAge   = errors.New("invalid max age")
+	errInvalidArchiveSampleRate = errors.New("invalid archive sample rate")
 )
 
 type CLI struct {
@@ -162,6 +164,14 @@ func (c *CLI) cleanupInstances() error {
 			return errInvalidInstancesMaxAge
 		}
 
+		archiveSampleRate := c.c.Int64("archive-sample-rate")
+		if archiveSampleRate <= 0 {
+			c.log.WithFields(logrus.Fields{
+				"sample_rate": archiveSampleRate,
+			}).Error("archive sample rate must be positive")
+			return errInvalidArchiveSampleRate
+		}
+
 		c.log.WithFields(logrus.Fields{
 			"max_age":    c.c.Duration("instance-max-age"),
 			"tick":       c.c.Duration("rate-tick-limit"),
@@ -176,11 +186,14 @@ func (c *CLI) cleanupInstances() error {
 			sc:  c.sc,
 			log: c.log.WithField("component", "instance_cleaner"),
 
+			rand: rand.New(rand.NewSource(time.Now().UnixNano())),
+
 			projectID: c.c.String("project-id"),
 			filters:   filters,
 
-			archiveSerial: c.c.Bool("archive-serial"),
-			archiveBucket: c.c.String("archive-bucket"),
+			archiveSerial:     c.c.Bool("archive-serial"),
+			archiveBucket:     c.c.String("archive-bucket"),
+			archiveSampleRate: archiveSampleRate,
 
 			noop: c.c.Bool("noop"),
 

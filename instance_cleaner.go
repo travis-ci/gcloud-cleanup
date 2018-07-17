@@ -27,13 +27,16 @@ type instanceCleaner struct {
 	sc  *storage.Client
 	log *logrus.Entry
 
+	rand *rand.Rand
+
 	projectID string
 	filters   []string
 
 	noop bool
 
-	archiveSerial bool
-	archiveBucket string
+	archiveSerial     bool
+	archiveBucket     string
+	archiveSampleRate int64
 
 	CutoffTime time.Time
 
@@ -219,6 +222,13 @@ func (ic *instanceCleaner) l2met(name string, n int, msg string) {
 func (ic *instanceCleaner) archiveSerialConsoleOutput(inst *compute.Instance) error {
 	if ic.sc == nil {
 		return errNoStorageClient
+	}
+
+	archiveSampled := ic.rand.Float32() < (1.0 / float32(ic.archiveSampleRate))
+
+	if !archiveSampled {
+		ic.log.WithField("instance", inst.Name).Debug("skipping archive due to sample rate")
+		return nil
 	}
 
 	accum := ""
