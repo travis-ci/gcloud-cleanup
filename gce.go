@@ -61,6 +61,20 @@ func buildGoogleStorageClient(ctx context.Context, accountJSON string) (*storage
 	return storage.NewClient(ctx, option.WithCredentials(creds))
 }
 
+func buildGoogleCloudCredentials(ctx context.Context, accountJSON string) (*google.Credentials, error) {
+	credBytes, err := loadBytes(accountJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	creds, err := google.CredentialsFromJSON(ctx, credBytes, storage.ScopeReadWrite)
+	if err != nil {
+		return nil, err
+	}
+
+	return creds, nil
+}
+
 func loadGoogleAccountJSON(filenameOrJSON string) (*gceAccountJSON, error) {
 	bytes, err := loadBytes(filenameOrJSON)
 	if err != nil {

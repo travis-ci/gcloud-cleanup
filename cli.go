@@ -3,18 +3,24 @@ package gcloudcleanup
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"os"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
+
+	"contrib.go.opencensus.io/exporter/stackdriver"
+	"go.opencensus.io/trace"
+
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/option"
 	"gopkg.in/urfave/cli.v2"
 
-	"github.com/sirupsen/logrus"
 	"github.com/mihasya/go-metrics-librato"
 	"github.com/rcrowley/go-metrics"
+	"github.com/sirupsen/logrus"
 	travismetrics "github.com/travis-ci/gcloud-cleanup/metrics"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )
@@ -62,12 +68,20 @@ func (c *CLI) Run() error {
 
 	c.setupMetrics()
 
-	err := c.setupComputeService(c.c.String("account-json"))
+	err := c.setupOpenCensus(c.c.String("account-json"))
+	if err != nil {
+		c.log.WithField("err", err).Fatal("failed to set up opencensus")
+	}
+
+	err = c.setupComputeService(c.c.String("account-json"))
 	if err != nil {
 		c.log.WithField("err", err).Fatal("failed to set up compute service")
 	}
 
 	err = c.setupStorageClient(c.c.String("account-json"))
+	if err != nil {
+		c.log.WithField("err", err).Fatal("failed to set up storage client")
+	}
 
 	sleepDur := c.c.Duration("loop-sleep")
 	if sleepDur == (0 * time.Second) {
@@ -87,7 +101,7 @@ func (c *CLI) Run() error {
 		"instances": c.cleanupInstances,
 		"images":    c.cleanupImages,
 	}
-
+	// main loop (for loop w/o args)
 	for {
 		for _, entity := range entities {
 			if f, ok := entityMap[entity]; ok {
@@ -111,7 +125,7 @@ func (c *CLI) Run() error {
 		if once {
 			break
 		}
-
+		fmt.Println("string test here")
 		c.log.WithField("duration", sleepDur).Info("sleeping")
 		time.Sleep(sleepDur)
 	}
@@ -146,6 +160,7 @@ func (c *CLI) setupRateLimiter() {
 		c.c.String("rate-limit-prefix"))
 }
 
+// set up instance cleaner
 func (c *CLI) cleanupInstances() error {
 	if c.instanceCleaner == nil {
 		filters := c.c.StringSlice("instance-filters")
@@ -220,6 +235,32 @@ func (i *CLI) setupMetrics() {
 			os.Getenv("LIBRATO_EMAIL"), os.Getenv("LIBRATO_TOKEN"), os.Getenv("LIBRATO_SOURCE"),
 			[]float64{0.50, 0.75, 0.90, 0.95, 0.99, 0.999, 1.0}, time.Millisecond)
 	}
+}
+
+func (i *CLI) setupOpenCensus(accountJSON string) error {
+	creds, err := buildGoogleCloudCredentials(context.TODO(), accountJSON)
+	if err != nil {
+		return err
+	}
+
+	sd, err := stackdriver.NewExporter(stackdriver.Options{
+		ProjectID: os.Getenv("GCP_PROJECTID"),
+		TraceClientOptions: []option.ClientOption{
+			option.WithCredentials(creds),
+		},
+	})
+	if err != nil {
+		return err
+	}
+	defer sd.Flush()
+
+	// Register/enable the trace exporter
+	trace.RegisterExporter(sd)
+
+	// For demo purposes, set the trace sampling probability to be high
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1.0)})
+
+	return nil
 }
 
 func (c *CLI) cleanupImages() error {
