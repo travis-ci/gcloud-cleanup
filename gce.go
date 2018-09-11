@@ -1,13 +1,17 @@
 package gcloudcleanup
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"strings"
 
+	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/option"
 )
 
 type gceAccountJSON struct {
@@ -43,7 +47,32 @@ func buildGoogleComputeService(accountJSON string) (*compute.Service, error) {
 	return cs, nil
 }
 
+func buildGoogleStorageClient(ctx context.Context, accountJSON string) (*storage.Client, error) {
+	credBytes, err := loadBytes(accountJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	creds, err := google.CredentialsFromJSON(ctx, credBytes, storage.ScopeReadWrite)
+	if err != nil {
+		return nil, err
+	}
+
+	return storage.NewClient(ctx, option.WithCredentials(creds))
+}
+
 func loadGoogleAccountJSON(filenameOrJSON string) (*gceAccountJSON, error) {
+	bytes, err := loadBytes(filenameOrJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	a := &gceAccountJSON{}
+	err = json.Unmarshal(bytes, a)
+	return a, err
+}
+
+func loadBytes(filenameOrJSON string) ([]byte, error) {
 	var (
 		bytes []byte
 		err   error
@@ -58,7 +87,5 @@ func loadGoogleAccountJSON(filenameOrJSON string) (*gceAccountJSON, error) {
 		}
 	}
 
-	a := &gceAccountJSON{}
-	err = json.Unmarshal(bytes, a)
-	return a, err
+	return bytes, nil
 }
