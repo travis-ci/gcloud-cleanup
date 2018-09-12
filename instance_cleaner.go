@@ -52,16 +52,14 @@ type instanceDeletionRequest struct {
 
 func (ic *instanceCleaner) Run() error {
 	ic.log.WithFields(logrus.Fields{
-		"project":        ic.projectID,
-		"cutoff_time":    ic.CutoffTime.Format(time.RFC3339),
-		"filters":        strings.Join(ic.filters, ","),
-		"carmen's field": "baby's first field",
+		"project":     ic.projectID,
+		"cutoff_time": ic.CutoffTime.Format(time.RFC3339),
+		"filters":     strings.Join(ic.filters, ","),
 	}).Info("running instance cleanup")
 
 	instChan := make(chan *instanceDeletionRequest)
 	errChan := make(chan error)
 
-	//fetching which instances to delete
 	go ic.fetchInstancesToDelete(instChan, errChan)
 	go func() {
 		for err := range errChan {

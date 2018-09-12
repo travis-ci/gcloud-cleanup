@@ -3,7 +3,6 @@ package gcloudcleanup
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/rand"
 	"os"
 	"strings"
@@ -101,7 +100,7 @@ func (c *CLI) Run() error {
 		"instances": c.cleanupInstances,
 		"images":    c.cleanupImages,
 	}
-	// main loop (for loop w/o args)
+
 	for {
 		for _, entity := range entities {
 			if f, ok := entityMap[entity]; ok {
@@ -125,7 +124,6 @@ func (c *CLI) Run() error {
 		if once {
 			break
 		}
-		fmt.Println("string test here")
 		c.log.WithField("duration", sleepDur).Info("sleeping")
 		time.Sleep(sleepDur)
 	}
@@ -160,7 +158,6 @@ func (c *CLI) setupRateLimiter() {
 		c.c.String("rate-limit-prefix"))
 }
 
-// set up instance cleaner
 func (c *CLI) cleanupInstances() error {
 	if c.instanceCleaner == nil {
 		filters := c.c.StringSlice("instance-filters")
