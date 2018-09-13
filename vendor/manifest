@@ -119,18 +119,18 @@
 			"notests": true
 		},
 		{
-			"importpath": "github.com/Shopify/sarama",
-			"repository": "https://github.com/Shopify/sarama",
+			"importpath": "contrib.go.opencensus.io/exporter/stackdriver",
+			"repository": "https://github.com/census-ecosystem/opencensus-go-exporter-stackdriver",
 			"vcs": "git",
-			"revision": "46cf3e2cf1acef7876068f66cf69ec31aad2d0b2",
+			"revision": "9f333b48d3826fe9ed540ba2095c1fbd8514f750",
 			"branch": "master",
 			"notests": true
 		},
 		{
-			"importpath": "github.com/sirupsen/logrus",
-			"repository": "https://github.com/sirupsen/logrus",
+			"importpath": "github.com/Shopify/sarama",
+			"repository": "https://github.com/Shopify/sarama",
 			"vcs": "git",
-			"revision": "e3292c4c4d7fc915224d48222565b02f6af1900e",
+			"revision": "46cf3e2cf1acef7876068f66cf69ec31aad2d0b2",
 			"branch": "master",
 			"notests": true
 		},
@@ -141,6 +141,96 @@
 			"revision": "af7ecd6a2b15efe5c6b742cf4a9ccb31bcc1f362",
 			"branch": "master",
 			"path": "/lib/go/thrift",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/aws",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "aws",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/awstesting/unit",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "awstesting/unit",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/internal/sdkio",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "internal/sdkio",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/internal/sdkrand",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "internal/sdkrand",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/internal/sdkuri",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "internal/sdkuri",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/internal/shareddefaults",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "internal/shareddefaults",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/private/protocol",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "private/protocol",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/service/sts",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "service/sts",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/vendor/github.com/go-ini/ini",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "vendor/github.com/go-ini/ini",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/vendor/github.com/jmespath/go-jmespath",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "vendor/github.com/jmespath/go-jmespath",
 			"notests": true
 		},
 		{
@@ -393,6 +483,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/sirupsen/logrus",
+			"repository": "https://github.com/sirupsen/logrus",
+			"vcs": "git",
+			"revision": "e3292c4c4d7fc915224d48222565b02f6af1900e",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/stretchr/testify/assert",
 			"repository": "https://github.com/stretchr/testify",
 			"vcs": "git",
@@ -405,7 +503,7 @@
 			"importpath": "go.opencensus.io",
 			"repository": "https://github.com/census-instrumentation/opencensus-go",
 			"vcs": "git",
-			"revision": "140879bf49cb17276aaf28b5f6a04e251ff98473",
+			"revision": "53d438757d994ef2e7624cad3de6ac36764496fa",
 			"branch": "master",
 			"notests": true
 		},

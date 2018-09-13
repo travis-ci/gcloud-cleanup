@@ -246,9 +246,11 @@ func (i *CLI) setupOpenCensus(accountJSON string) error {
 			option.WithCredentials(creds),
 		},
 	})
+
 	if err != nil {
 		return err
 	}
+
 	defer sd.Flush()
 
 	// Register/enable the trace exporter
