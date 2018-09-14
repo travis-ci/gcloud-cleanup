@@ -241,8 +241,11 @@ func (i *CLI) setupOpenCensus(accountJSON string) error {
 	}
 
 	sd, err := stackdriver.NewExporter(stackdriver.Options{
-		ProjectID: os.Getenv("GCP_PROJECTID"),
+		ProjectID: os.Getenv("GCLOUD_PROJECT"),
 		TraceClientOptions: []option.ClientOption{
+			option.WithCredentials(creds),
+		},
+		MonitoringClientOptions: []option.ClientOption{
 			option.WithCredentials(creds),
 		},
 	})
