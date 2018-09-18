@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/storage"
+	"cloud.google.com/go/trace"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
@@ -67,7 +68,7 @@ func buildGoogleCloudCredentials(ctx context.Context, accountJSON string) (*goog
 		return nil, err
 	}
 
-	creds, err := google.CredentialsFromJSON(ctx, credBytes, storage.ScopeReadWrite)
+	creds, err := google.CredentialsFromJSON(ctx, credBytes, trace.ScopeTraceAppend)
 	if err != nil {
 		return nil, err
 	}
