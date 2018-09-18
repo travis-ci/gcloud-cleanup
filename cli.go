@@ -158,6 +158,37 @@ func (c *CLI) setupRateLimiter() {
 		c.c.String("rate-limit-prefix"))
 }
 
+func (i *CLI) setupOpenCensus(accountJSON string) error {
+	creds, err := buildGoogleCloudCredentials(context.TODO(), accountJSON)
+	if err != nil {
+		return err
+	}
+
+	sd, err := stackdriver.NewExporter(stackdriver.Options{
+		ProjectID: os.Getenv("GCLOUD_PROJECT"),
+		TraceClientOptions: []option.ClientOption{
+			option.WithCredentials(creds),
+		},
+		MonitoringClientOptions: []option.ClientOption{
+			option.WithCredentials(creds),
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	defer sd.Flush()
+
+	// Register/enable the trace exporter
+	trace.RegisterExporter(sd)
+
+	// For demo purposes, set the trace sampling probability to be high
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1.0)})
+
+	return nil
+}
+
 func (c *CLI) cleanupInstances() error {
 	if c.instanceCleaner == nil {
 		filters := c.c.StringSlice("instance-filters")
@@ -232,37 +263,6 @@ func (i *CLI) setupMetrics() {
 			os.Getenv("LIBRATO_EMAIL"), os.Getenv("LIBRATO_TOKEN"), os.Getenv("LIBRATO_SOURCE"),
 			[]float64{0.50, 0.75, 0.90, 0.95, 0.99, 0.999, 1.0}, time.Millisecond)
 	}
-}
-
-func (i *CLI) setupOpenCensus(accountJSON string) error {
-	creds, err := buildGoogleCloudCredentials(context.TODO(), accountJSON)
-	if err != nil {
-		return err
-	}
-
-	sd, err := stackdriver.NewExporter(stackdriver.Options{
-		ProjectID: os.Getenv("GCLOUD_PROJECT"),
-		TraceClientOptions: []option.ClientOption{
-			option.WithCredentials(creds),
-		},
-		MonitoringClientOptions: []option.ClientOption{
-			option.WithCredentials(creds),
-		},
-	})
-
-	if err != nil {
-		return err
-	}
-
-	defer sd.Flush()
-
-	// Register/enable the trace exporter
-	trace.RegisterExporter(sd)
-
-	// For demo purposes, set the trace sampling probability to be high
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1.0)})
-
-	return nil
 }
 
 func (c *CLI) cleanupImages() error {

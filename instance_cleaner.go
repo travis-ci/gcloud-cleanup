@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+	"go.opencensus.io/trace"
 	"google.golang.org/api/compute/v1"
 
 	"github.com/sirupsen/logrus"
@@ -51,6 +52,10 @@ type instanceDeletionRequest struct {
 }
 
 func (ic *instanceCleaner) Run() error {
+
+	ctx, span := trace.StartSpan(context.Background(), "spanMain")
+	defer span.End()
+
 	ic.log.WithFields(logrus.Fields{
 		"project":     ic.projectID,
 		"cutoff_time": ic.CutoffTime.Format(time.RFC3339),
@@ -60,8 +65,9 @@ func (ic *instanceCleaner) Run() error {
 	instChan := make(chan *instanceDeletionRequest)
 	errChan := make(chan error)
 
-	go ic.fetchInstancesToDelete(instChan, errChan)
+	go ic.fetchInstancesToDelete(ctx, instChan, errChan)
 	go func() {
+
 		for err := range errChan {
 			ic.log.WithField("err", err).Warn("error during instance fetch")
 		}
@@ -94,7 +100,7 @@ func (ic *instanceCleaner) Run() error {
 	return nil
 }
 
-func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletionRequest, errChan chan error) {
+func (ic *instanceCleaner) fetchInstancesToDelete(ctx context.Context, instChan chan *instanceDeletionRequest, errChan chan error) {
 	defer close(errChan)
 	defer close(instChan)
 
