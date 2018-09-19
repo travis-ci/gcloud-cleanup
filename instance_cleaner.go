@@ -53,7 +53,7 @@ type instanceDeletionRequest struct {
 
 func (ic *instanceCleaner) Run() error {
 
-	ctx, span := trace.StartSpan(context.Background(), "spanMain")
+	ctx, span := trace.StartSpan(context.Background(), "InstanceCleanerRun")
 	defer span.End()
 
 	ic.log.WithFields(logrus.Fields{
@@ -76,7 +76,7 @@ func (ic *instanceCleaner) Run() error {
 	nDeleted := 0
 
 	for req := range instChan {
-		err := ic.deleteInstance(req.Instance)
+		err := ic.deleteInstance(ctx, req.Instance)
 
 		if err != nil {
 			ic.log.WithFields(logrus.Fields{
@@ -101,6 +101,10 @@ func (ic *instanceCleaner) Run() error {
 }
 
 func (ic *instanceCleaner) fetchInstancesToDelete(ctx context.Context, instChan chan *instanceDeletionRequest, errChan chan error) {
+
+	ctx, span := trace.StartSpan(ctx, "FetchInstancesToDelete")
+	defer span.End()
+
 	defer close(errChan)
 	defer close(instChan)
 
@@ -202,7 +206,10 @@ func (ic *instanceCleaner) fetchInstancesToDelete(ctx context.Context, instChan 
 	ic.l2met("gauge#instances.count", nInstances, "done checking all instances")
 }
 
-func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
+func (ic *instanceCleaner) deleteInstance(ctx context.Context, inst *compute.Instance) error {
+	// instance cleaner run on the outside, delete
+	ctx, span := trace.StartSpan(ctx, "DeleteInstance")
+	defer span.End()
 	if ic.noop {
 		ic.log.WithField("instance", inst.Name).Debug("not really deleting instance")
 		return nil
