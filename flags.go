@@ -96,6 +96,12 @@ var (
 			Usage:   "sample rate for archiving as an inverse fraction - for sample rate n, every nth event will be sampled",
 			EnvVars: []string{"GCLOUD_CLEANUP_ARCHIVE_SAMPLE_RATE", "ARCHIVE_SAMPLE_RATE"},
 		},
+		&cli.Int64Flag{
+			Name:    "trace-sample-rate",
+			Value:   8,
+			Usage:   "sample rate for trace as an inverse fraction - for sample rate n, every nth event will be sampled",
+			EnvVars: []string{"GCLOUD_CLEANUP_TRACE_SAMPLE_RATE", "TRACE_SAMPLE_RATE"},
+		},
 		&cli.BoolFlag{
 			Name:    "debug",
 			Usage:   "output more stuff",

@@ -27,6 +27,7 @@ import (
 var (
 	errInvalidInstancesMaxAge   = errors.New("invalid max age")
 	errInvalidArchiveSampleRate = errors.New("invalid archive sample rate")
+	errInvalidTraceSampleRate   = errors.New("invalid trace sample rate")
 )
 
 type CLI struct {
@@ -183,9 +184,7 @@ func (i *CLI) setupOpenCensus(accountJSON string) error {
 	// Register/enable the trace exporter
 	trace.RegisterExporter(sd)
 
-	// For demo purposes, set the trace sampling probability to be high
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1.0)})
-
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(0.1)})
 	return nil
 }
 
@@ -215,6 +214,14 @@ func (c *CLI) cleanupInstances() error {
 			return errInvalidArchiveSampleRate
 		}
 
+		traceSampleRate := c.c.Int64("trace-sample-rate")
+		if traceSampleRate <= 0 {
+			c.log.WithFields(logrus.Fields{
+				"trace_sample_rate": traceSampleRate,
+			}).Error("trace sample rate must be positive")
+			return errInvalidTraceSampleRate
+		}
+
 		c.log.WithFields(logrus.Fields{
 			"max_age":    c.c.Duration("instance-max-age"),
 			"tick":       c.c.Duration("rate-tick-limit"),
@@ -237,8 +244,7 @@ func (c *CLI) cleanupInstances() error {
 			archiveSerial:     c.c.Bool("archive-serial"),
 			archiveBucket:     c.c.String("archive-bucket"),
 			archiveSampleRate: archiveSampleRate,
-
-			noop: c.c.Bool("noop"),
+			noop:              c.c.Bool("noop"),
 
 			CutoffTime: cutoffTime,
 
