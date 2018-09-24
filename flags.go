@@ -109,8 +109,8 @@ var (
 		},
 		&cli.BoolFlag{
 			Name:    "opencensus-enable",
-			Usage:   "disable tracing for gcloud-cleanup",
-			EnvVars: []string{"GCLOUD_CLEANUP_OPENCENSUS_ENABLE", "OPENCENSUS_DISABLE"},
+			Usage:   "enable tracing for gcloud-cleanup",
+			EnvVars: []string{"GCLOUD_CLEANUP_OPENCENSUS_ENABLE", "OPENCENSUS_ENABLE"},
 		},
 		&cli.BoolFlag{
 			Name:    "noop",
