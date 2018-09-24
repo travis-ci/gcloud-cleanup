@@ -108,6 +108,11 @@ var (
 			EnvVars: []string{"GCLOUD_CLEANUP_DEBUG", "DEBUG"},
 		},
 		&cli.BoolFlag{
+			Name:    "opencensus-enable",
+			Usage:   "disable tracing for gcloud-cleanup",
+			EnvVars: []string{"GCLOUD_CLEANUP_OPENCENSUS_ENABLE", "OPENCENSUS_DISABLE"},
+		},
+		&cli.BoolFlag{
 			Name:    "noop",
 			Usage:   "don't do mutative stuff",
 			EnvVars: []string{"GCLOUD_CLEANUP_NOOP", "NOOP"},
