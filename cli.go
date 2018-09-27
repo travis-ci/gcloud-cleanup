@@ -161,9 +161,9 @@ func (c *CLI) setupRateLimiter() {
 }
 
 func (c *CLI) setupOpenCensus(accountJSON string) error {
-	traceenabled := c.c.Bool("opencensus-enable")
+	traceEnabled := c.c.Bool("opencensus-enable")
 
-	if traceenabled {
+	if traceEnabled {
 		creds, err := buildGoogleCloudCredentials(context.TODO(), accountJSON)
 		if err != nil {
 			return err
