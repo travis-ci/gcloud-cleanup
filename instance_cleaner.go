@@ -52,7 +52,6 @@ type instanceDeletionRequest struct {
 }
 
 func (ic *instanceCleaner) Run() error {
-
 	ctx, span := trace.StartSpan(context.Background(), "InstanceCleanerRun")
 	defer span.End()
 
@@ -67,7 +66,6 @@ func (ic *instanceCleaner) Run() error {
 
 	go ic.fetchInstancesToDelete(ctx, instChan, errChan)
 	go func() {
-
 		for err := range errChan {
 			ic.log.WithField("err", err).Warn("error during instance fetch")
 		}
@@ -101,7 +99,6 @@ func (ic *instanceCleaner) Run() error {
 }
 
 func (ic *instanceCleaner) fetchInstancesToDelete(ctx context.Context, instChan chan *instanceDeletionRequest, errChan chan error) {
-
 	ctx, span := trace.StartSpan(ctx, "FetchInstancesToDelete")
 	defer span.End()
 
@@ -209,6 +206,7 @@ func (ic *instanceCleaner) fetchInstancesToDelete(ctx context.Context, instChan 
 func (ic *instanceCleaner) deleteInstance(ctx context.Context, inst *compute.Instance) error {
 	ctx, span := trace.StartSpan(ctx, "DeleteInstance")
 	defer span.End()
+
 	if ic.noop {
 		ic.log.WithField("instance", inst.Name).Debug("not really deleting instance")
 		return nil
@@ -293,6 +291,7 @@ func (ic *instanceCleaner) archiveSerialConsoleOutput(ctx context.Context, inst 
 func (ic *instanceCleaner) apiRateLimit(ctx context.Context) error {
 	ctx, span := trace.StartSpan(ctx, "apiRateLimit")
 	defer span.End()
+
 	ic.log.Debug("waiting for rate limiter tick")
 	errCount := 0
 
