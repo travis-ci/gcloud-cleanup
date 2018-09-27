@@ -159,7 +159,7 @@ func (c *CLI) setupRateLimiter() {
 		c.c.String("rate-limit-prefix"))
 }
 
-func (i *CLI) setupOpenCensus(accountJSON string) error {
+func (c *CLI) setupOpenCensus(accountJSON string) error {
 	creds, err := buildGoogleCloudCredentials(context.TODO(), accountJSON)
 	if err != nil {
 		return err
@@ -184,7 +184,15 @@ func (i *CLI) setupOpenCensus(accountJSON string) error {
 	// Register/enable the trace exporter
 	trace.RegisterExporter(sd)
 
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(0.1)})
+	traceSampleRate := c.c.Int64("trace-sample-rate")
+	if traceSampleRate <= 0 {
+		c.log.WithFields(logrus.Fields{
+			"trace_sample_rate": traceSampleRate,
+		}).Error("trace sample rate must be positive")
+		return errInvalidTraceSampleRate
+	}
+
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1.0 / float64(traceSampleRate))})
 	return nil
 }
 
@@ -212,14 +220,6 @@ func (c *CLI) cleanupInstances() error {
 				"sample_rate": archiveSampleRate,
 			}).Error("archive sample rate must be positive")
 			return errInvalidArchiveSampleRate
-		}
-
-		traceSampleRate := c.c.Int64("trace-sample-rate")
-		if traceSampleRate <= 0 {
-			c.log.WithFields(logrus.Fields{
-				"trace_sample_rate": traceSampleRate,
-			}).Error("trace sample rate must be positive")
-			return errInvalidTraceSampleRate
 		}
 
 		c.log.WithFields(logrus.Fields{

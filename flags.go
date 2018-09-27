@@ -98,7 +98,7 @@ var (
 		},
 		&cli.Int64Flag{
 			Name:    "trace-sample-rate",
-			Value:   8,
+			Value:   1,
 			Usage:   "sample rate for trace as an inverse fraction - for sample rate n, every nth event will be sampled",
 			EnvVars: []string{"GCLOUD_CLEANUP_TRACE_SAMPLE_RATE", "TRACE_SAMPLE_RATE"},
 		},
