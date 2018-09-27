@@ -9,12 +9,17 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+
+	"contrib.go.opencensus.io/exporter/stackdriver"
+	"go.opencensus.io/trace"
+
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/option"
 	"gopkg.in/urfave/cli.v2"
 
-	"github.com/sirupsen/logrus"
 	"github.com/mihasya/go-metrics-librato"
 	"github.com/rcrowley/go-metrics"
+	"github.com/sirupsen/logrus"
 	travismetrics "github.com/travis-ci/gcloud-cleanup/metrics"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )
@@ -22,6 +27,7 @@ import (
 var (
 	errInvalidInstancesMaxAge   = errors.New("invalid max age")
 	errInvalidArchiveSampleRate = errors.New("invalid archive sample rate")
+	errInvalidTraceSampleRate   = errors.New("invalid trace sample rate")
 )
 
 type CLI struct {
@@ -62,12 +68,20 @@ func (c *CLI) Run() error {
 
 	c.setupMetrics()
 
-	err := c.setupComputeService(c.c.String("account-json"))
+	err := c.setupOpenCensus(c.c.String("account-json"))
+	if err != nil {
+		c.log.WithField("err", err).Fatal("failed to set up opencensus")
+	}
+
+	err = c.setupComputeService(c.c.String("account-json"))
 	if err != nil {
 		c.log.WithField("err", err).Fatal("failed to set up compute service")
 	}
 
 	err = c.setupStorageClient(c.c.String("account-json"))
+	if err != nil {
+		c.log.WithField("err", err).Fatal("failed to set up storage client")
+	}
 
 	sleepDur := c.c.Duration("loop-sleep")
 	if sleepDur == (0 * time.Second) {
@@ -146,6 +160,50 @@ func (c *CLI) setupRateLimiter() {
 		c.c.String("rate-limit-prefix"))
 }
 
+func (c *CLI) setupOpenCensus(accountJSON string) error {
+	opencensusEnabled := c.c.Bool("opencensus-tracing-enabled")
+
+	if !opencensusEnabled {
+		return nil
+	}
+
+	creds, err := buildGoogleCloudCredentials(context.TODO(), accountJSON)
+	if err != nil {
+		return err
+	}
+
+	sd, err := stackdriver.NewExporter(stackdriver.Options{
+		ProjectID: os.Getenv("GCLOUD_PROJECT"),
+		TraceClientOptions: []option.ClientOption{
+			option.WithCredentials(creds),
+		},
+		MonitoringClientOptions: []option.ClientOption{
+			option.WithCredentials(creds),
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	defer sd.Flush()
+
+	// Register/enable the trace exporter
+	trace.RegisterExporter(sd)
+
+	traceSampleRate := c.c.Int64("opencensus-sampling-rate")
+	if traceSampleRate <= 0 {
+		c.log.WithFields(logrus.Fields{
+			"trace_sample_rate": traceSampleRate,
+		}).Error("trace sample rate must be positive")
+		return errInvalidTraceSampleRate
+	}
+
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1.0 / float64(traceSampleRate))})
+
+	return nil
+}
+
 func (c *CLI) cleanupInstances() error {
 	if c.instanceCleaner == nil {
 		filters := c.c.StringSlice("instance-filters")
@@ -194,8 +252,7 @@ func (c *CLI) cleanupInstances() error {
 			archiveSerial:     c.c.Bool("archive-serial"),
 			archiveBucket:     c.c.String("archive-bucket"),
 			archiveSampleRate: archiveSampleRate,
-
-			noop: c.c.Bool("noop"),
+			noop:              c.c.Bool("noop"),
 
 			CutoffTime: cutoffTime,
 
