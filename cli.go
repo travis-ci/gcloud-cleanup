@@ -161,9 +161,9 @@ func (c *CLI) setupRateLimiter() {
 }
 
 func (c *CLI) setupOpenCensus(accountJSON string) error {
-	traceEnabled := c.c.Bool("opencensus-enable")
+	opencensusEnabled := c.c.Bool("opencensus-tracing-enabled")
 
-	if !traceEnabled {
+	if !opencensusEnabled {
 		return nil
 	}
 
@@ -191,7 +191,7 @@ func (c *CLI) setupOpenCensus(accountJSON string) error {
 	// Register/enable the trace exporter
 	trace.RegisterExporter(sd)
 
-	traceSampleRate := c.c.Int64("trace-sample-rate")
+	traceSampleRate := c.c.Int64("opencensus-sampling-rate")
 	if traceSampleRate <= 0 {
 		c.log.WithFields(logrus.Fields{
 			"trace_sample_rate": traceSampleRate,
