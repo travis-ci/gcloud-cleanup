@@ -125,6 +125,7 @@ func (c *CLI) Run() error {
 		if once {
 			break
 		}
+
 		c.log.WithField("duration", sleepDur).Info("sleeping")
 		time.Sleep(sleepDur)
 	}
@@ -160,39 +161,44 @@ func (c *CLI) setupRateLimiter() {
 }
 
 func (c *CLI) setupOpenCensus(accountJSON string) error {
-	creds, err := buildGoogleCloudCredentials(context.TODO(), accountJSON)
-	if err != nil {
-		return err
+	traceenabled := c.c.Bool("opencensus-enable")
+
+	if traceenabled {
+		creds, err := buildGoogleCloudCredentials(context.TODO(), accountJSON)
+		if err != nil {
+			return err
+		}
+
+		sd, err := stackdriver.NewExporter(stackdriver.Options{
+			ProjectID: os.Getenv("GCLOUD_PROJECT"),
+			TraceClientOptions: []option.ClientOption{
+				option.WithCredentials(creds),
+			},
+			MonitoringClientOptions: []option.ClientOption{
+				option.WithCredentials(creds),
+			},
+		})
+
+		if err != nil {
+			return err
+		}
+
+		defer sd.Flush()
+
+		// Register/enable the trace exporter
+		trace.RegisterExporter(sd)
+
+		traceSampleRate := c.c.Int64("trace-sample-rate")
+		if traceSampleRate <= 0 {
+			c.log.WithFields(logrus.Fields{
+				"trace_sample_rate": traceSampleRate,
+			}).Error("trace sample rate must be positive")
+			return errInvalidTraceSampleRate
+		}
+
+		trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1.0 / float64(traceSampleRate))})
+		return nil
 	}
-
-	sd, err := stackdriver.NewExporter(stackdriver.Options{
-		ProjectID: os.Getenv("GCLOUD_PROJECT"),
-		TraceClientOptions: []option.ClientOption{
-			option.WithCredentials(creds),
-		},
-		MonitoringClientOptions: []option.ClientOption{
-			option.WithCredentials(creds),
-		},
-	})
-
-	if err != nil {
-		return err
-	}
-
-	defer sd.Flush()
-
-	// Register/enable the trace exporter
-	trace.RegisterExporter(sd)
-
-	traceSampleRate := c.c.Int64("trace-sample-rate")
-	if traceSampleRate <= 0 {
-		c.log.WithFields(logrus.Fields{
-			"trace_sample_rate": traceSampleRate,
-		}).Error("trace sample rate must be positive")
-		return errInvalidTraceSampleRate
-	}
-
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1.0 / float64(traceSampleRate))})
 	return nil
 }
 
