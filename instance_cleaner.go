@@ -153,15 +153,6 @@ func (ic *instanceCleaner) fetchInstancesToDelete(ctx context.Context, instChan 
 
 				statusCounts[inst.Status]++
 
-				if inst.Status == "TERMINATED" {
-					log.WithFields(logrus.Fields{
-						"status": inst.Status,
-					}).Debug("sending instance for deletion")
-
-					instChan <- &instanceDeletionRequest{Instance: inst, Reason: "terminated"}
-					continue
-				}
-
 				ts, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
 
 				if err != nil {
