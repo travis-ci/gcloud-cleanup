@@ -55,6 +55,10 @@ func (ic *instanceCleaner) Run() error {
 	ctx, span := trace.StartSpan(context.Background(), "InstanceCleanerRun")
 	defer span.End()
 
+	span.AddAttributes(
+		trace.StringAttribute("app", "gcloud-cleanup"),
+	)
+
 	ic.log.WithFields(logrus.Fields{
 		"project":     ic.projectID,
 		"cutoff_time": ic.CutoffTime.Format(time.RFC3339),
