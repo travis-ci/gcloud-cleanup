@@ -125,7 +125,7 @@ func (ic *instanceCleaner) fetchInstancesToDelete(ctx context.Context, instChan 
 
 		ic.apiRateLimit(ctx)
 		ic.log.WithField("page_token", pageTok).Debug("fetching instances aggregated list")
-		resp, err := listCall.Do()
+		resp, err := listCall.Context(ctx).Do()
 
 		if err != nil {
 			errChan <- err
@@ -216,7 +216,7 @@ func (ic *instanceCleaner) deleteInstance(ctx context.Context, inst *compute.Ins
 	}
 
 	ic.apiRateLimit(ctx)
-	_, err := ic.cs.Instances.Delete(ic.projectID, filepath.Base(inst.Zone), inst.Name).Do()
+	_, err := ic.cs.Instances.Delete(ic.projectID, filepath.Base(inst.Zone), inst.Name).Context(ctx).Do()
 	return err
 }
 

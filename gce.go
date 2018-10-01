@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"cloud.google.com/go/storage"
 	"cloud.google.com/go/trace"
+	"go.opencensus.io/plugin/ochttp"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
@@ -36,7 +38,11 @@ func buildGoogleComputeService(accountJSON string) (*compute.Service, error) {
 		TokenURL: "https://accounts.google.com/o/oauth2/token",
 	}
 
-	client := config.Client(oauth2.NoContext)
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{
+		Transport: &ochttp.Transport{},
+	})
+
+	client := config.Client(ctx)
 
 	cs, err := compute.New(client)
 	if err != nil {
