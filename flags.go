@@ -10,7 +10,7 @@ var (
 	Flags = []cli.Flag{
 		&cli.StringFlag{
 			Name:    "account-json",
-			Value:   "{}",
+			Value:   "",
 			Usage:   "file path to or json blob of GCE account stuff",
 			EnvVars: []string{"GCLOUD_CLEANUP_ACCOUNT_JSON", "GOOGLE_CREDENTIALS"},
 		},
