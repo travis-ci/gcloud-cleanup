@@ -39,14 +39,14 @@ jobs:
     - bash <(curl -s https://codecov.io/bash)
     - tar -czvf build.tar.gz build Procfile Makefile
   - name: docker
+    if: type != 'pull_request'
     script:
-    - docker build -t travisci/gcloud-cleanup .
-    - docker run -it travisci/gcloud-cleanup --help
-    deploy:
-      provider: script
-      script: script/docker-push travisci/gcloud-cleanup
-      on:
-        branch: igor-docker
+    - export DOCKER_IMAGE_REPO=travisci/gcloud-cleanup
+    - export VERSION_VALUE=$(git describe --always --dirty --tags 2>/dev/null)
+    - export DOCKER_DEST=$DOCKER_IMAGE_REPO:$VERSION_VALUE
+    - docker build -t $DOCKER_DEST .
+    - docker run -it $DOCKER_DEST --help
+    - script/docker-push $DOCKER_DEST
     addons:
       apt:
         packages:
