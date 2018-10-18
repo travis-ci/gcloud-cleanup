@@ -405,6 +405,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/pkg/errors",
+			"repository": "https://github.com/pkg/errors",
+			"vcs": "git",
+			"revision": "2233dee583dcf88f3c8b22cb7a33f05a499800d8",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/pkg/profile",
 			"repository": "https://github.com/pkg/profile",
 			"vcs": "git",
