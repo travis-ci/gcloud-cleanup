@@ -12,28 +12,42 @@ env:
   - TRAVIS_COMMIT_SHORT="$(echo $TRAVIS_COMMIT | cut -b1-7)"
   - TRAVIS_COMMIT_LESSSHORT="$(echo $TRAVIS_COMMIT | cut -b1-9)"
 
-addons:
-  artifacts:
-    paths:
-    - "./build/linux/amd64/gcloud-cleanup"
-    - "./build/darwin/amd64/gcloud-cleanup"
-    - "./build.tar.gz"
-    target_paths:
-    - travis-ci/gcloud-cleanup/$TRAVIS_BRANCH
-    - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT
-    - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT_SHORT
-    - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT_LESSSHORT
-
-install:
-- make prereqs
-
-script:
-- travis_retry make deps
-- make copyright
-- git diff --exit-code
-- git diff --cached --exit-code
-- make
-
-after_success:
-- bash <(curl -s https://codecov.io/bash)
-- tar -czvf build.tar.gz build Procfile Makefile
+jobs:
+  include:
+  - stage: test
+    name: linux
+    install:
+    - make prereqs
+    script:
+    - travis_retry make deps
+    - make copyright
+    - git diff --exit-code
+    - git diff --cached --exit-code
+    - make
+    addons:
+      artifacts:
+        paths:
+        - "./build/linux/amd64/gcloud-cleanup"
+        - "./build/darwin/amd64/gcloud-cleanup"
+        - "./build.tar.gz"
+        target_paths:
+        - travis-ci/gcloud-cleanup/$TRAVIS_BRANCH
+        - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT
+        - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT_SHORT
+        - travis-ci/gcloud-cleanup/$TRAVIS_COMMIT_LESSSHORT
+    after_success:
+    - bash <(curl -s https://codecov.io/bash)
+    - tar -czvf build.tar.gz build Procfile Makefile
+  - name: docker
+    script:
+    - docker build -t travisci/gcloud-cleanup .
+    - docker run -it travisci/gcloud-cleanup --help
+    deploy:
+      provider: script
+      script: script/docker-push travisci/gcloud-cleanup
+      on:
+        branch: igor-docker
+    addons:
+      apt:
+        packages:
+          - docker-ce
