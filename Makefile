@@ -30,7 +30,7 @@ all: clean build test coverage.html crossbuild
 clean:
 	$(RM) $(GOPATH)/bin/gcloud-cleanup
 	$(RM) -rv ./build coverage.html coverage.txt
-	$(FIND) $(GOPATH)/pkg -wholename "*$(PACKAGE)*.a" -delete
+	if [ -d $(GOPATH)/pkg ]; then find $(GOPATH)/pkg -wholename '*$(PACKAGE)*.a' -delete ; fi
 
 .PHONY: test
 test: .test coverage.txt coverage.html
