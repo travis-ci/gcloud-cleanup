@@ -2,7 +2,6 @@ package gcloudcleanup
 
 import (
 	"context"
-	"errors"
 	"math/rand"
 	"os"
 	"strings"
@@ -19,6 +18,7 @@ import (
 	"gopkg.in/urfave/cli.v2"
 
 	"github.com/mihasya/go-metrics-librato"
+	"github.com/pkg/errors"
 	"github.com/rcrowley/go-metrics"
 	"github.com/sirupsen/logrus"
 	travismetrics "github.com/travis-ci/gcloud-cleanup/metrics"
@@ -58,6 +58,8 @@ func NewCLI(c *cli.Context) *CLI {
 }
 
 func (c *CLI) Run() error {
+	var err error
+
 	projectId := c.c.String("project-id")
 	if projectId == "" && metadata.OnGCE() {
 		projectId, err = metadata.ProjectID()
@@ -83,7 +85,7 @@ func (c *CLI) Run() error {
 
 	c.setupMetrics()
 
-	err := c.setupOpenCensus(c.c.String("account-json"))
+	err = c.setupOpenCensus(c.c.String("account-json"))
 	if err != nil {
 		c.log.WithField("err", err).Fatal("failed to set up opencensus")
 	}
