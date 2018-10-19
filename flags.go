@@ -16,6 +16,7 @@ var (
 		},
 		&cli.StringFlag{
 			Name:    "project-id",
+			Value:   "",
 			Usage:   "name of GCE project",
 			EnvVars: []string{"GCLOUD_CLEANUP_PROJECT_ID", "GCLOUD_PROJECT"},
 		},
