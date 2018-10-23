@@ -2,12 +2,12 @@ package gcloudcleanup
 
 import (
 	"context"
-	"errors"
 	"math/rand"
 	"os"
 	"strings"
 	"time"
 
+	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/storage"
 
 	"contrib.go.opencensus.io/exporter/stackdriver"
@@ -18,6 +18,7 @@ import (
 	"gopkg.in/urfave/cli.v2"
 
 	"github.com/mihasya/go-metrics-librato"
+	"github.com/pkg/errors"
 	"github.com/rcrowley/go-metrics"
 	"github.com/sirupsen/logrus"
 	travismetrics "github.com/travis-ci/gcloud-cleanup/metrics"
@@ -31,6 +32,8 @@ var (
 )
 
 type CLI struct {
+	projectID string
+
 	c           *cli.Context
 	ctx         context.Context
 	cs          *compute.Service
@@ -55,6 +58,20 @@ func NewCLI(c *cli.Context) *CLI {
 }
 
 func (c *CLI) Run() error {
+	var err error
+
+	projectId := c.c.String("project-id")
+	if projectId == "" && metadata.OnGCE() {
+		projectId, err = metadata.ProjectID()
+		if err != nil {
+			return errors.Wrap(err, "could not get project id from metadata api")
+		}
+	}
+	if projectId == "" {
+		return errors.New("please provide a project-id")
+	}
+	c.projectID = projectId
+
 	c.setupLogger()
 	c.setupRateLimiter()
 
@@ -68,7 +85,7 @@ func (c *CLI) Run() error {
 
 	c.setupMetrics()
 
-	err := c.setupOpenCensus(c.c.String("account-json"))
+	err = c.setupOpenCensus(c.c.String("account-json"))
 	if err != nil {
 		c.log.WithField("err", err).Fatal("failed to set up opencensus")
 	}
@@ -173,7 +190,7 @@ func (c *CLI) setupOpenCensus(accountJSON string) error {
 	}
 
 	sd, err := stackdriver.NewExporter(stackdriver.Options{
-		ProjectID: os.Getenv("GCLOUD_PROJECT"),
+		ProjectID: c.projectID,
 		TraceClientOptions: []option.ClientOption{
 			option.WithCredentials(creds),
 		},
@@ -233,7 +250,7 @@ func (c *CLI) cleanupInstances() error {
 		c.log.WithFields(logrus.Fields{
 			"max_age":    c.c.Duration("instance-max-age"),
 			"tick":       c.c.Duration("rate-tick-limit"),
-			"project_id": c.c.String("project-id"),
+			"project_id": c.projectID,
 			"filters":    strings.Join(filters, ","),
 			"cutoff":     cutoffTime.Format(time.RFC3339),
 		}).Debug("creating instance cleaner with")
@@ -246,7 +263,7 @@ func (c *CLI) cleanupInstances() error {
 
 			rand: rand.New(rand.NewSource(time.Now().UnixNano())),
 
-			projectID: c.c.String("project-id"),
+			projectID: c.projectID,
 			filters:   filters,
 
 			archiveSerial:     c.c.Bool("archive-serial"),
@@ -288,7 +305,7 @@ func (c *CLI) cleanupImages() error {
 		}
 
 		c.imageCleaner = newImageCleaner(c.cs,
-			c.log, c.rateLimiter, uint64(c.c.Int("rate-limit-max-calls")), c.c.Duration("rate-limit-duration"), c.c.String("project-id"),
+			c.log, c.rateLimiter, uint64(c.c.Int("rate-limit-max-calls")), c.c.Duration("rate-limit-duration"), c.projectID,
 			c.c.String("job-board-url"), filters, c.c.Bool("noop"))
 	}
 
