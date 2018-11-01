@@ -4,9 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"cloud.google.com/go/storage"
+	"cloud.google.com/go/trace"
+	googlecloudtrace "cloud.google.com/go/trace"
+	"github.com/pkg/errors"
+	"go.opencensus.io/plugin/ochttp"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
@@ -20,6 +25,14 @@ type gceAccountJSON struct {
 }
 
 func buildGoogleComputeService(accountJSON string) (*compute.Service, error) {
+	if accountJSON == "" {
+		client, err := google.DefaultClient(context.TODO(), compute.DevstorageFullControlScope, compute.ComputeScope)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not build default client")
+		}
+		return compute.New(client)
+	}
+
 	a, err := loadGoogleAccountJSON(accountJSON)
 	if err != nil {
 		return nil, err
@@ -35,7 +48,11 @@ func buildGoogleComputeService(accountJSON string) (*compute.Service, error) {
 		TokenURL: "https://accounts.google.com/o/oauth2/token",
 	}
 
-	client := config.Client(oauth2.NoContext)
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{
+		Transport: &ochttp.Transport{},
+	})
+
+	client := config.Client(ctx)
 
 	cs, err := compute.New(client)
 	if err != nil {
@@ -48,6 +65,14 @@ func buildGoogleComputeService(accountJSON string) (*compute.Service, error) {
 }
 
 func buildGoogleStorageClient(ctx context.Context, accountJSON string) (*storage.Client, error) {
+	if accountJSON == "" {
+		creds, err := google.FindDefaultCredentials(ctx, storage.ScopeReadWrite)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not build default client")
+		}
+		return storage.NewClient(ctx, option.WithCredentials(creds))
+	}
+
 	credBytes, err := loadBytes(accountJSON)
 	if err != nil {
 		return nil, err
@@ -59,6 +84,25 @@ func buildGoogleStorageClient(ctx context.Context, accountJSON string) (*storage
 	}
 
 	return storage.NewClient(ctx, option.WithCredentials(creds))
+}
+
+func buildGoogleCloudCredentials(ctx context.Context, accountJSON string) (*google.Credentials, error) {
+	if accountJSON == "" {
+		creds, err := google.FindDefaultCredentials(ctx, googlecloudtrace.ScopeTraceAppend)
+		return creds, errors.Wrap(err, "could not build default client")
+	}
+
+	credBytes, err := loadBytes(accountJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	creds, err := google.CredentialsFromJSON(ctx, credBytes, trace.ScopeTraceAppend)
+	if err != nil {
+		return nil, err
+	}
+
+	return creds, nil
 }
 
 func loadGoogleAccountJSON(filenameOrJSON string) (*gceAccountJSON, error) {

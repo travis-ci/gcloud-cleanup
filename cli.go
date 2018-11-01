@@ -2,27 +2,38 @@ package gcloudcleanup
 
 import (
 	"context"
-	"errors"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
 
+	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/storage"
+
+	"contrib.go.opencensus.io/exporter/stackdriver"
+	"go.opencensus.io/trace"
+
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/option"
 	"gopkg.in/urfave/cli.v2"
 
-	"github.com/sirupsen/logrus"
 	"github.com/mihasya/go-metrics-librato"
+	"github.com/pkg/errors"
 	"github.com/rcrowley/go-metrics"
+	"github.com/sirupsen/logrus"
 	travismetrics "github.com/travis-ci/gcloud-cleanup/metrics"
 	"github.com/travis-ci/gcloud-cleanup/ratelimit"
 )
 
 var (
-	errInvalidInstancesMaxAge = errors.New("invalid max age")
+	errInvalidInstancesMaxAge   = errors.New("invalid max age")
+	errInvalidArchiveSampleRate = errors.New("invalid archive sample rate")
+	errInvalidTraceSampleRate   = errors.New("invalid trace sample rate")
 )
 
 type CLI struct {
+	projectID string
+
 	c           *cli.Context
 	ctx         context.Context
 	cs          *compute.Service
@@ -47,6 +58,20 @@ func NewCLI(c *cli.Context) *CLI {
 }
 
 func (c *CLI) Run() error {
+	var err error
+
+	projectId := c.c.String("project-id")
+	if projectId == "" && metadata.OnGCE() {
+		projectId, err = metadata.ProjectID()
+		if err != nil {
+			return errors.Wrap(err, "could not get project id from metadata api")
+		}
+	}
+	if projectId == "" {
+		return errors.New("please provide a project-id")
+	}
+	c.projectID = projectId
+
 	c.setupLogger()
 	c.setupRateLimiter()
 
@@ -60,12 +85,20 @@ func (c *CLI) Run() error {
 
 	c.setupMetrics()
 
-	err := c.setupComputeService(c.c.String("account-json"))
+	err = c.setupOpenCensus(c.c.String("account-json"))
+	if err != nil {
+		c.log.WithField("err", err).Fatal("failed to set up opencensus")
+	}
+
+	err = c.setupComputeService(c.c.String("account-json"))
 	if err != nil {
 		c.log.WithField("err", err).Fatal("failed to set up compute service")
 	}
 
 	err = c.setupStorageClient(c.c.String("account-json"))
+	if err != nil {
+		c.log.WithField("err", err).Fatal("failed to set up storage client")
+	}
 
 	sleepDur := c.c.Duration("loop-sleep")
 	if sleepDur == (0 * time.Second) {
@@ -144,6 +177,50 @@ func (c *CLI) setupRateLimiter() {
 		c.c.String("rate-limit-prefix"))
 }
 
+func (c *CLI) setupOpenCensus(accountJSON string) error {
+	opencensusEnabled := c.c.Bool("opencensus-tracing-enabled")
+
+	if !opencensusEnabled {
+		return nil
+	}
+
+	creds, err := buildGoogleCloudCredentials(context.TODO(), accountJSON)
+	if err != nil {
+		return err
+	}
+
+	sd, err := stackdriver.NewExporter(stackdriver.Options{
+		ProjectID: c.projectID,
+		TraceClientOptions: []option.ClientOption{
+			option.WithCredentials(creds),
+		},
+		MonitoringClientOptions: []option.ClientOption{
+			option.WithCredentials(creds),
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	defer sd.Flush()
+
+	// Register/enable the trace exporter
+	trace.RegisterExporter(sd)
+
+	traceSampleRate := c.c.Int64("opencensus-sampling-rate")
+	if traceSampleRate <= 0 {
+		c.log.WithFields(logrus.Fields{
+			"trace_sample_rate": traceSampleRate,
+		}).Error("trace sample rate must be positive")
+		return errInvalidTraceSampleRate
+	}
+
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1.0 / float64(traceSampleRate))})
+
+	return nil
+}
+
 func (c *CLI) cleanupInstances() error {
 	if c.instanceCleaner == nil {
 		filters := c.c.StringSlice("instance-filters")
@@ -162,10 +239,18 @@ func (c *CLI) cleanupInstances() error {
 			return errInvalidInstancesMaxAge
 		}
 
+		archiveSampleRate := c.c.Int64("archive-sample-rate")
+		if archiveSampleRate <= 0 {
+			c.log.WithFields(logrus.Fields{
+				"sample_rate": archiveSampleRate,
+			}).Error("archive sample rate must be positive")
+			return errInvalidArchiveSampleRate
+		}
+
 		c.log.WithFields(logrus.Fields{
 			"max_age":    c.c.Duration("instance-max-age"),
 			"tick":       c.c.Duration("rate-tick-limit"),
-			"project_id": c.c.String("project-id"),
+			"project_id": c.projectID,
 			"filters":    strings.Join(filters, ","),
 			"cutoff":     cutoffTime.Format(time.RFC3339),
 		}).Debug("creating instance cleaner with")
@@ -176,13 +261,15 @@ func (c *CLI) cleanupInstances() error {
 			sc:  c.sc,
 			log: c.log.WithField("component", "instance_cleaner"),
 
-			projectID: c.c.String("project-id"),
+			rand: rand.New(rand.NewSource(time.Now().UnixNano())),
+
+			projectID: c.projectID,
 			filters:   filters,
 
-			archiveSerial: c.c.Bool("archive-serial"),
-			archiveBucket: c.c.String("archive-bucket"),
-
-			noop: c.c.Bool("noop"),
+			archiveSerial:     c.c.Bool("archive-serial"),
+			archiveBucket:     c.c.String("archive-bucket"),
+			archiveSampleRate: archiveSampleRate,
+			noop:              c.c.Bool("noop"),
 
 			CutoffTime: cutoffTime,
 
@@ -218,7 +305,7 @@ func (c *CLI) cleanupImages() error {
 		}
 
 		c.imageCleaner = newImageCleaner(c.cs,
-			c.log, c.rateLimiter, uint64(c.c.Int("rate-limit-max-calls")), c.c.Duration("rate-limit-duration"), c.c.String("project-id"),
+			c.log, c.rateLimiter, uint64(c.c.Int("rate-limit-max-calls")), c.c.Duration("rate-limit-duration"), c.projectID,
 			c.c.String("job-board-url"), filters, c.c.Bool("noop"))
 	}
 

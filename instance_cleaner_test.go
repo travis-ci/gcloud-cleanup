@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -27,6 +28,7 @@ func TestNewInstanceCleaner(t *testing.T) {
 
 	ic := &instanceCleaner{
 		log:               log.WithField("test", "yep"),
+		rand:              rand.New(rand.NewSource(4)),
 		rateLimiter:       rl,
 		rateLimitMaxCalls: 10,
 		rateLimitDuration: time.Second,
@@ -134,6 +136,7 @@ func TestInstanceCleaner_Run(t *testing.T) {
 		cs:                cs,
 		sc:                sc,
 		log:               log.WithField("test", "yep"),
+		rand:              rand.New(rand.NewSource(4)),
 		rateLimiter:       rl,
 		rateLimitMaxCalls: 10,
 		rateLimitDuration: time.Second,

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+	"go.opencensus.io/trace"
 	"google.golang.org/api/compute/v1"
 
 	"github.com/sirupsen/logrus"
@@ -27,13 +28,16 @@ type instanceCleaner struct {
 	sc  *storage.Client
 	log *logrus.Entry
 
+	rand *rand.Rand
+
 	projectID string
 	filters   []string
 
 	noop bool
 
-	archiveSerial bool
-	archiveBucket string
+	archiveSerial     bool
+	archiveBucket     string
+	archiveSampleRate int64
 
 	CutoffTime time.Time
 
@@ -48,6 +52,13 @@ type instanceDeletionRequest struct {
 }
 
 func (ic *instanceCleaner) Run() error {
+	ctx, span := trace.StartSpan(context.Background(), "InstanceCleanerRun")
+	defer span.End()
+
+	span.AddAttributes(
+		trace.StringAttribute("app", "gcloud-cleanup"),
+	)
+
 	ic.log.WithFields(logrus.Fields{
 		"project":     ic.projectID,
 		"cutoff_time": ic.CutoffTime.Format(time.RFC3339),
@@ -57,7 +68,7 @@ func (ic *instanceCleaner) Run() error {
 	instChan := make(chan *instanceDeletionRequest)
 	errChan := make(chan error)
 
-	go ic.fetchInstancesToDelete(instChan, errChan)
+	go ic.fetchInstancesToDelete(ctx, instChan, errChan)
 	go func() {
 		for err := range errChan {
 			ic.log.WithField("err", err).Warn("error during instance fetch")
@@ -67,7 +78,7 @@ func (ic *instanceCleaner) Run() error {
 	nDeleted := 0
 
 	for req := range instChan {
-		err := ic.deleteInstance(req.Instance)
+		err := ic.deleteInstance(ctx, req.Instance)
 
 		if err != nil {
 			ic.log.WithFields(logrus.Fields{
@@ -91,7 +102,10 @@ func (ic *instanceCleaner) Run() error {
 	return nil
 }
 
-func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletionRequest, errChan chan error) {
+func (ic *instanceCleaner) fetchInstancesToDelete(ctx context.Context, instChan chan *instanceDeletionRequest, errChan chan error) {
+	ctx, span := trace.StartSpan(ctx, "FetchInstancesToDelete")
+	defer span.End()
+
 	defer close(errChan)
 	defer close(instChan)
 
@@ -109,9 +123,9 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletio
 			listCall.PageToken(pageTok)
 		}
 
-		ic.apiRateLimit()
+		ic.apiRateLimit(ctx)
 		ic.log.WithField("page_token", pageTok).Debug("fetching instances aggregated list")
-		resp, err := listCall.Do()
+		resp, err := listCall.Context(ctx).Do()
 
 		if err != nil {
 			errChan <- err
@@ -138,15 +152,6 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletio
 				}
 
 				statusCounts[inst.Status]++
-
-				if inst.Status == "TERMINATED" {
-					log.WithFields(logrus.Fields{
-						"status": inst.Status,
-					}).Debug("sending instance for deletion")
-
-					instChan <- &instanceDeletionRequest{Instance: inst, Reason: "terminated"}
-					continue
-				}
 
 				ts, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
 
@@ -193,7 +198,10 @@ func (ic *instanceCleaner) fetchInstancesToDelete(instChan chan *instanceDeletio
 	ic.l2met("gauge#instances.count", nInstances, "done checking all instances")
 }
 
-func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
+func (ic *instanceCleaner) deleteInstance(ctx context.Context, inst *compute.Instance) error {
+	ctx, span := trace.StartSpan(ctx, "DeleteInstance")
+	defer span.End()
+
 	if ic.noop {
 		ic.log.WithField("instance", inst.Name).Debug("not really deleting instance")
 		return nil
@@ -201,14 +209,14 @@ func (ic *instanceCleaner) deleteInstance(inst *compute.Instance) error {
 
 	if ic.archiveSerial {
 		ic.log.WithField("instance", inst.Name).Debug("archiving serial port output")
-		err := ic.archiveSerialConsoleOutput(inst)
+		err := ic.archiveSerialConsoleOutput(ctx, inst)
 		if err != nil {
 			return err
 		}
 	}
 
-	ic.apiRateLimit()
-	_, err := ic.cs.Instances.Delete(ic.projectID, filepath.Base(inst.Zone), inst.Name).Do()
+	ic.apiRateLimit(ctx)
+	_, err := ic.cs.Instances.Delete(ic.projectID, filepath.Base(inst.Zone), inst.Name).Context(ctx).Do()
 	return err
 }
 
@@ -216,16 +224,26 @@ func (ic *instanceCleaner) l2met(name string, n int, msg string) {
 	ic.log.WithField(name, n).Info(msg)
 }
 
-func (ic *instanceCleaner) archiveSerialConsoleOutput(inst *compute.Instance) error {
+func (ic *instanceCleaner) archiveSerialConsoleOutput(ctx context.Context, inst *compute.Instance) error {
+	ctx, span := trace.StartSpan(ctx, "archiveSerialConsoleOutput")
+	defer span.End()
+
 	if ic.sc == nil {
 		return errNoStorageClient
+	}
+
+	archiveSampled := ic.rand.Float32() < (1.0 / float32(ic.archiveSampleRate))
+
+	if !archiveSampled {
+		ic.log.WithField("instance", inst.Name).Debug("skipping archive due to sample rate")
+		return nil
 	}
 
 	accum := ""
 	lastPos := int64(0)
 
 	for {
-		ic.apiRateLimit()
+		ic.apiRateLimit(ctx)
 		resp, err := ic.cs.Instances.GetSerialPortOutput(
 			ic.projectID, filepath.Base(inst.Zone), inst.Name).Start(lastPos).Context(ic.ctx).Do()
 
@@ -265,7 +283,10 @@ func (ic *instanceCleaner) archiveSerialConsoleOutput(inst *compute.Instance) er
 	return nil
 }
 
-func (ic *instanceCleaner) apiRateLimit() error {
+func (ic *instanceCleaner) apiRateLimit(ctx context.Context) error {
+	ctx, span := trace.StartSpan(ctx, "apiRateLimit")
+	defer span.End()
+
 	ic.log.Debug("waiting for rate limiter tick")
 	errCount := 0
 

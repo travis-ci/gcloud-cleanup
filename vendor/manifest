@@ -110,12 +110,20 @@
 			"notests": true
 		},
 		{
-			"importpath": "cloud.google.com/go/trace/apiv2",
+			"importpath": "cloud.google.com/go/trace",
 			"repository": "https://code.googlesource.com/gocloud",
 			"vcs": "git",
-			"revision": "5e6e4824f48ade4393d647a2d621fa27238b5954",
+			"revision": "97efc2c9ffd9fe8ef47f7f3203dc60bbca547374",
 			"branch": "master",
-			"path": "trace/apiv2",
+			"path": "/trace",
+			"notests": true
+		},
+		{
+			"importpath": "contrib.go.opencensus.io/exporter/stackdriver",
+			"repository": "https://github.com/census-ecosystem/opencensus-go-exporter-stackdriver",
+			"vcs": "git",
+			"revision": "9f333b48d3826fe9ed540ba2095c1fbd8514f750",
+			"branch": "master",
 			"notests": true
 		},
 		{
@@ -127,20 +135,102 @@
 			"notests": true
 		},
 		{
-			"importpath": "github.com/sirupsen/logrus",
-			"repository": "https://github.com/sirupsen/logrus",
-			"vcs": "git",
-			"revision": "e3292c4c4d7fc915224d48222565b02f6af1900e",
-			"branch": "master",
-			"notests": true
-		},
-		{
 			"importpath": "github.com/apache/thrift",
 			"repository": "https://github.com/apache/thrift.git",
 			"vcs": "git",
 			"revision": "af7ecd6a2b15efe5c6b742cf4a9ccb31bcc1f362",
 			"branch": "master",
 			"path": "/lib/go/thrift",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/aws",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "aws",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/awstesting/unit",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "awstesting/unit",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/internal/sdkio",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "internal/sdkio",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/internal/sdkrand",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "internal/sdkrand",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/internal/sdkuri",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "internal/sdkuri",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/internal/shareddefaults",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "internal/shareddefaults",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/private/protocol",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "private/protocol",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/service/sts",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "service/sts",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/vendor/github.com/go-ini/ini",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "vendor/github.com/go-ini/ini",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/aws/aws-sdk-go/vendor/github.com/jmespath/go-jmespath",
+			"repository": "https://github.com/aws/aws-sdk-go",
+			"vcs": "git",
+			"revision": "610e629922a0ca73ec3c55dda5b42ba47a85c2a7",
+			"branch": "master",
+			"path": "vendor/github.com/jmespath/go-jmespath",
 			"notests": true
 		},
 		{
@@ -315,6 +405,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/pkg/errors",
+			"repository": "https://github.com/pkg/errors",
+			"vcs": "git",
+			"revision": "2233dee583dcf88f3c8b22cb7a33f05a499800d8",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/pkg/profile",
 			"repository": "https://github.com/pkg/profile",
 			"vcs": "git",
@@ -393,6 +491,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/sirupsen/logrus",
+			"repository": "https://github.com/sirupsen/logrus",
+			"vcs": "git",
+			"revision": "e3292c4c4d7fc915224d48222565b02f6af1900e",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/stretchr/testify/assert",
 			"repository": "https://github.com/stretchr/testify",
 			"vcs": "git",
@@ -405,7 +511,7 @@
 			"importpath": "go.opencensus.io",
 			"repository": "https://github.com/census-instrumentation/opencensus-go",
 			"vcs": "git",
-			"revision": "140879bf49cb17276aaf28b5f6a04e251ff98473",
+			"revision": "53d438757d994ef2e7624cad3de6ac36764496fa",
 			"branch": "master",
 			"notests": true
 		},
@@ -724,6 +830,15 @@
 			"notests": true
 		},
 		{
+			"importpath": "google.golang.org/api/cloudtrace/v1",
+			"repository": "https://code.googlesource.com/google-api-go-client",
+			"vcs": "git",
+			"revision": "19ff8768a5c0b8e46ea281065664787eefc24121",
+			"branch": "master",
+			"path": "/cloudtrace/v1",
+			"notests": true
+		},
+		{
 			"importpath": "google.golang.org/api/compute/v1",
 			"repository": "https://code.googlesource.com/google-api-go-client",
 			"vcs": "git",
@@ -918,6 +1033,15 @@
 			"revision": "80063a038e333bbe006c878e4c5ce4c74d055498",
 			"branch": "master",
 			"path": "googleapis/datastore/v1",
+			"notests": true
+		},
+		{
+			"importpath": "google.golang.org/genproto/googleapis/devtools/cloudtrace/v1",
+			"repository": "https://github.com/google/go-genproto",
+			"vcs": "git",
+			"revision": "4b56f30a1fd96a133a036b62cdd2a249883dd89b",
+			"branch": "master",
+			"path": "/googleapis/devtools/cloudtrace/v1",
 			"notests": true
 		},
 		{

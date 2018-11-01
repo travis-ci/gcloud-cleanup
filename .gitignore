@@ -1,4 +1,5 @@
 .*env
+.envrc
 !.example.env
 vendor/*
 !vendor/manifest
