@@ -3,7 +3,6 @@ FIND ?= find
 GIT ?= git
 GO ?= go
 GREP ?= grep
-GVT ?= gvt
 SED ?= sed
 TOUCH ?= touch
 TR ?= tr

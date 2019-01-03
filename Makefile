@@ -48,31 +48,16 @@ coverage.html: coverage.txt
 	$(GO) tool cover -html=$^ -o $@
 
 .PHONY: build
-build: deps
-	$(GO) install -x -ldflags "$(GOBUILD_LDFLAGS)" $(ALL_PACKAGES)
+build:
+	$(GO) build -x -ldflags "$(GOBUILD_LDFLAGS)" $(ALL_PACKAGES)
 
 .PHONY: crossbuild
-crossbuild: deps
+crossbuild:
 	GOARCH=amd64 GOOS=darwin $(GO) build -o build/darwin/amd64/gcloud-cleanup \
 		-ldflags "$(GOBUILD_LDFLAGS)" $(PACKAGE)/cmd/gcloud-cleanup
 	GOARCH=amd64 GOOS=linux $(GO) build -o build/linux/amd64/gcloud-cleanup \
 		-ldflags "$(GOBUILD_LDFLAGS)" $(PACKAGE)/cmd/gcloud-cleanup
 
-.PHONY: distclean
-distclean: clean
-	$(RM) vendor/.deps-fetched
-
-.PHONY: deps
-deps: vendor/.deps-fetched
-
-.PHONY: prereqs
-prereqs:
-	$(GO) get github.com/FiloSottile/gvt
-
 .PHONY: copyright
 copyright:
 	$(SED) -i "s/^Copyright.*Travis CI/Copyright © $(shell date +%Y) Travis CI/" LICENSE
-
-vendor/.deps-fetched:
-	$(GVT) rebuild
-	$(TOUCH) $@

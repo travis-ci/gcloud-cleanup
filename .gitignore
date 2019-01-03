@@ -1,8 +1,6 @@
 .*env
 .envrc
 !.example.env
-vendor/*
-!vendor/manifest
 build/
 coverage.txt
 coverage.html

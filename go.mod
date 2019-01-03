@@ -1,0 +1,54 @@
+module github.com/travis-ci/gcloud-cleanup
+
+require (
+	cloud.google.com/go v0.28.0
+	contrib.go.opencensus.io/exporter/stackdriver v0.0.0-20180910204836-9f333b48d382
+	github.com/Shopify/sarama v0.0.0-20180615224312-46cf3e2cf1ac
+	github.com/apache/thrift v0.0.0-20180622210517-af7ecd6a2b15
+	github.com/aws/aws-sdk-go v1.15.31
+	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
+	github.com/cenkalti/backoff v0.0.0-20180518090649-f756bc9a37f8
+	github.com/davecgh/go-spew v1.1.1
+	github.com/eapache/go-resiliency v1.1.0
+	github.com/eapache/go-xerial-snappy v0.0.0-20160609142408-bb955e01b934
+	github.com/eapache/queue v0.0.0-20180227141424-093482f3f8ce
+	github.com/garyburd/redigo v0.0.0-20180404160726-569eae59ada9
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/golang/mock v0.0.0-20180503014854-22bbf0ddf081
+	github.com/golang/protobuf v1.2.0
+	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
+	github.com/google/go-cmp v0.0.0-20180328201512-5411ab924f9f
+	github.com/googleapis/gax-go v2.0.0+incompatible
+	github.com/matttproud/golang_protobuf_extensions v1.0.1
+	github.com/mihasya/go-metrics-librato v0.0.0-20171227215858-c2a1624c7a80
+	github.com/openzipkin/zipkin-go v0.1.1
+	github.com/pierrec/lz4 v2.0.2+incompatible
+	github.com/pkg/errors v0.0.0-20181008045315-2233dee583dc
+	github.com/pkg/profile v1.2.1
+	github.com/pmezard/go-difflib v1.0.0
+	github.com/prometheus/client_golang v0.8.0
+	github.com/prometheus/client_model v0.0.0-20180712105110-5c3871d89910
+	github.com/prometheus/common v0.0.0-20180801064454-c7de2306084e
+	github.com/prometheus/procfs v0.0.0-20180725123919-05ee40e3a273
+	github.com/rcrowley/go-metrics v0.0.0-20180503174638-e2704e165165
+	github.com/sirupsen/logrus v0.0.0-20180625052543-e3292c4c4d7f
+	github.com/stretchr/testify v1.2.2
+	go.opencensus.io v0.15.0
+	go4.org v0.0.0-20180417224846-9599cf28b011
+	golang.org/x/build v0.0.0-20180626170447-46b9db78f1d5
+	golang.org/x/crypto v0.0.0-20180621125126-a49355c7e3f8
+	golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
+	golang.org/x/oauth2 v0.0.0-20180620175406-ef147856a6dd
+	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
+	golang.org/x/sys v0.0.0-20180909124046-d0be0721c37e
+	golang.org/x/text v0.3.0
+	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
+	google.golang.org/api v0.0.0-20180916000451-19ff8768a5c0
+	google.golang.org/appengine v1.1.0
+	google.golang.org/cloud v0.0.0-20180626095708-5e6e4824f48a
+	google.golang.org/genproto v0.0.0-20180914223249-4b56f30a1fd9
+	google.golang.org/grpc v1.14.0
+	gopkg.in/airbrake/gobrake.v2 v2.0.9
+	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2
+	gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8
+)
