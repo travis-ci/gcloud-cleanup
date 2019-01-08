@@ -1,14 +1,9 @@
-language: go
-
-go: 1.9
-
-dist: trusty
-
+language: bash
+dist: xenial
 group: edge
 
 env:
   global:
-  - GO15VENDOREXPERIMENT='1'
   - TRAVIS_COMMIT_SHORT="$(echo $TRAVIS_COMMIT | cut -b1-7)"
   - TRAVIS_COMMIT_LESSSHORT="$(echo $TRAVIS_COMMIT | cut -b1-9)"
 
@@ -16,10 +11,9 @@ jobs:
   include:
   - stage: test
     name: linux
-    install:
-    - make prereqs
+    before_script:
+    - eval "$(gimme 1.11.4)"
     script:
-    - travis_retry make deps
     - make copyright
     - git diff --exit-code
     - git diff --cached --exit-code
@@ -45,9 +39,9 @@ jobs:
     - export VERSION_VALUE=$(git describe --always --dirty --tags 2>/dev/null)
     - export DOCKER_DEST=$DOCKER_IMAGE_REPO:$VERSION_VALUE
     - docker build -t $DOCKER_DEST .
-    - docker run -it $DOCKER_DEST --help
+    - docker run --rm -it $DOCKER_DEST gcloud-cleanup --help
     - script/docker-push $DOCKER_DEST
     addons:
       apt:
         packages:
-          - docker-ce
+        - docker-ce

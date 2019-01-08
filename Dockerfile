@@ -1,17 +1,14 @@
 FROM golang:1.11 as builder
 MAINTAINER Travis CI GmbH <support+gcloud-cleanup-docker-image@travis-ci.org>
 
-RUN go get -u github.com/FiloSottile/gvt
-
-COPY . /go/src/github.com/travis-ci/gcloud-cleanup
-WORKDIR /go/src/github.com/travis-ci/gcloud-cleanup
-RUN make deps
+COPY . /tmp/gcloud-cleanup
+WORKDIR /tmp/gcloud-cleanup
 ENV CGO_ENABLED 0
-RUN make build
+RUN make build crossbuild
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates curl bash
 
-COPY --from=builder /go/bin/gcloud-cleanup /usr/local/bin/gcloud-cleanup
+COPY --from=builder /tmp/gcloud-cleanup/build/linux/amd64/gcloud-cleanup /usr/local/bin/gcloud-cleanup
 
-ENTRYPOINT ["/usr/local/bin/gcloud-cleanup"]
+CMD ["/usr/local/bin/gcloud-cleanup"]
