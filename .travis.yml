@@ -5,7 +5,6 @@ group: edge
 
 env:
   global:
-  - GO15VENDOREXPERIMENT='1'
   - TRAVIS_COMMIT_SHORT="$(echo $TRAVIS_COMMIT | cut -b1-7)"
   - TRAVIS_COMMIT_LESSSHORT="$(echo $TRAVIS_COMMIT | cut -b1-9)"
 
