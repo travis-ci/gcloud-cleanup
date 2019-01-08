@@ -1,9 +1,6 @@
 language: go
-
-go: 1.9
-
-dist: trusty
-
+go: 1.11.x
+dist: xenial
 group: edge
 
 env:
@@ -47,4 +44,4 @@ jobs:
     addons:
       apt:
         packages:
-          - docker-ce
+        - docker-ce
