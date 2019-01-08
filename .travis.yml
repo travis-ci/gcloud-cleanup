@@ -1,5 +1,4 @@
-language: go
-go: 1.11.4
+language: bash
 dist: xenial
 group: edge
 
@@ -12,6 +11,8 @@ jobs:
   include:
   - stage: test
     name: linux
+    before_script:
+    - eval "$(gimme 1.11.4)"
     script:
     - make copyright
     - git diff --exit-code
