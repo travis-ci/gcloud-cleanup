@@ -167,6 +167,15 @@ func (ic *instanceCleaner) fetchInstancesToDelete(ctx context.Context, instChan 
 					"parsed": ts.Format(time.RFC3339),
 				}).Debug("parsed and adjusted creation timestamp")
 
+				if inst.Status == "STOPPED" {
+					log.WithFields(logrus.Fields{
+						"status": inst.Status,
+					}).Debug("sending instance for deletion")
+
+					instChan <- &instanceDeletionRequest{Instance: inst, Reason: "stopped"}
+					continue
+				}
+
 				if ts.Before(ic.CutoffTime) {
 					log.WithFields(logrus.Fields{
 						"created": ts.Format(time.RFC3339),
