@@ -175,6 +175,15 @@ func (ic *instanceCleaner) fetchInstancesToDelete(ctx context.Context, instChan 
 					instChan <- &instanceDeletionRequest{Instance: inst, Reason: "stopped"}
 					continue
 				}
+				
+				if inst.Status == "TERMINATED" {
+					log.WithFields(logrus.Fields{
+						"status": inst.Status,
+					}).Debug("sending instance for deletion")
+
+					instChan <- &instanceDeletionRequest{Instance: inst, Reason: "TERMINATED"}
+					continue
+				}
 
 				if ts.Before(ic.CutoffTime) {
 					log.WithFields(logrus.Fields{
