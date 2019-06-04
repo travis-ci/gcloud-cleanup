@@ -3,7 +3,6 @@ package gcloudcleanup
 import (
 	"context"
 	"math/rand"
-	"os"
 	"strings"
 	"time"
 
@@ -287,11 +286,11 @@ func (c *CLI) cleanupInstances() error {
 func (i *CLI) setupMetrics() {
 	go travismetrics.ReportMemstatsMetrics()
 
-	if os.Getenv("LIBRATO_EMAIL") != "" && os.Getenv("LIBRATO_TOKEN") != "" && os.Getenv("LIBRATO_SOURCE") != "" {
+	if i.c.String("librato-email") != "" && i.c.String("librato-token") != "" && i.c.String("librato-source") != "" {
 		i.log.Info("starting librato metrics reporter")
 
 		go librato.Librato(metrics.DefaultRegistry, time.Minute,
-			os.Getenv("LIBRATO_EMAIL"), os.Getenv("LIBRATO_TOKEN"), os.Getenv("LIBRATO_SOURCE"),
+			i.c.String("librato-email"), i.c.String("librato-token"), i.c.String("librato-source"),
 			[]float64{0.50, 0.75, 0.90, 0.95, 0.99, 0.999, 1.0}, time.Millisecond)
 	}
 }
