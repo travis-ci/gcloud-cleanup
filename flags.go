@@ -118,5 +118,20 @@ var (
 			Usage:   "don't do mutative stuff",
 			EnvVars: []string{"GCLOUD_CLEANUP_NOOP", "NOOP"},
 		},
+		&cli.StringFlag{
+			Name:    "librato-email",
+			Usage:   "librato account for collecting metrics",
+			EnvVars: []string{"GCLOUD_CLEANUP_LIBRATO_EMAIL", "LIBRATO_EMAIL"},
+		},
+		&cli.StringFlag{
+			Name:    "librato-token",
+			Usage:   "librato token for collecting metrics",
+			EnvVars: []string{"GCLOUD_CLEANUP_LIBRATO_TOKEN", "LIBRATO_TOKEN"},
+		},
+		&cli.StringFlag{
+			Name:    "librato-source",
+			Usage:   "librato source for collecting metrics",
+			EnvVars: []string{"GCLOUD_CLEANUP_LIBRATO_SOURCE", "LIBRATO_SOURCE"},
+		},
 	}
 )
