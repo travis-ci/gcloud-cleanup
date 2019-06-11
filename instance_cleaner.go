@@ -309,7 +309,7 @@ func (ic *instanceCleaner) apiRateLimit(ctx context.Context) error {
 	errCount := 0
 
 	for {
-		ok, err := ic.rateLimiter.RateLimit("gce-api", ic.rateLimitMaxCalls, ic.rateLimitDuration)
+		ok, err := ic.rateLimiter.RateLimit(ctx, "gce-api", ic.rateLimitMaxCalls, ic.rateLimitDuration)
 		if err != nil {
 			errCount++
 			if errCount >= 5 {

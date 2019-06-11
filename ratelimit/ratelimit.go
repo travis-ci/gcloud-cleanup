@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	gocontext "context"
+
 	"github.com/garyburd/redigo/redis"
+	"go.opencensus.io/trace"
 )
 
 const (
@@ -14,24 +17,24 @@ const (
 	redisRateLimiterPoolIdleTimeout = 3 * time.Minute
 )
 
+// RateLimiter checks if a call can be let through and returns true if it can.
+//
+// The name should be the same for all calls that should be affected by the
+// same rate limit. The maxCalls and per arguments must be the same for all
+// calls that use the same name, otherwise the behaviour is undefined.
+//
+// The rate limiter lets through maxCalls calls in a window of time specified
+// by the "per" argument. Note that the window is not sliding, so if you say 10
+// calls per minute, and 10 calls happen in the first second, no further calls
+// will be let through for another 59 seconds.
+//
+// The actual call should only be made if (true, nil) is returned. If (false,
+// nil) is returned, it means that the number of requests in the time window is
+// met, and you should sleep for a bit and try again.
+//
+// In case an error happens, (false, err) is returned.
 type RateLimiter interface {
-	// RateLimit checks if a call can be let through and returns true if it can.
-	//
-	// The name should be the same for all calls that should be affected by the
-	// same rate limit. The maxCalls and per arguments must be the same for all
-	// calls that use the same name, otherwise the behaviour is undefined.
-	//
-	// The rate limiter lets through maxCalls calls in a window of time specified
-	// by the "per" argument. Note that the window is not sliding, so if you say 10
-	// calls per minute, and 10 calls happen in the first second, no further calls
-	// will be let through for another 59 seconds.
-	//
-	// The actual call should only be made if (true, nil) is returned. If (false,
-	// nil) is returned, it means that the number of requests in the time window is
-	// met, and you should sleep for a bit and try again.
-	//
-	// In case an error happens, (false, err) is returned.
-	RateLimit(name string, maxCalls uint64, per time.Duration) (bool, error)
+	RateLimit(ctx gocontext.Context, name string, maxCalls uint64, per time.Duration) (bool, error)
 }
 
 type redisRateLimiter struct {
@@ -73,9 +76,23 @@ func NewNullRateLimiter() RateLimiter {
 // requests when there are many clients talking to the same Redis. The reason
 // for this is unknown, but it's probably wise to limit the number of clients
 // to 5 or 6 for the time being.
-func (rl *redisRateLimiter) RateLimit(name string, maxCalls uint64, per time.Duration) (bool, error) {
+func (rl *redisRateLimiter) RateLimit(ctx gocontext.Context, name string, maxCalls uint64, per time.Duration) (bool, error) {
+	if trace.FromContext(ctx) != nil {
+		var span *trace.Span
+		ctx, span = trace.StartSpan(ctx, "Redis.RateLimit")
+		defer span.End()
+	}
+
+	poolCheckoutStart := time.Now()
+
 	conn := rl.pool.Get()
 	defer conn.Close()
+
+	if trace.FromContext(ctx) != nil {
+		var span *trace.Span
+		ctx, span = trace.StartSpan(ctx, "Redis.RateLimit.WithPool")
+		defer span.End()
+	}
 
 	now := time.Now()
 	timestamp := now.Unix() - (now.Unix() % int64(per.Seconds()))
@@ -120,6 +137,6 @@ func (rl *redisRateLimiter) RateLimit(name string, maxCalls uint64, per time.Dur
 	return true, nil
 }
 
-func (rl nullRateLimiter) RateLimit(name string, maxCalls uint64, per time.Duration) (bool, error) {
+func (rl nullRateLimiter) RateLimit(ctx gocontext.Context, name string, maxCalls uint64, per time.Duration) (bool, error) {
 	return true, nil
 }
