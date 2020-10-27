@@ -1,11 +1,12 @@
 language: bash
-dist: xenial
+dist: focal
 group: edge
 
 env:
   global:
   - TRAVIS_COMMIT_SHORT="$(echo $TRAVIS_COMMIT | cut -b1-7)"
   - TRAVIS_COMMIT_LESSSHORT="$(echo $TRAVIS_COMMIT | cut -b1-9)"
+  - CLOUDSDK_CORE_DISABLE_PROMPTS=1
 
 jobs:
   include:
@@ -35,7 +36,12 @@ jobs:
   - name: docker
     if: type != 'pull_request'
     script:
-    - export DOCKER_IMAGE_REPO=travisci/gcloud-cleanup
+    - snap install google-cloud-sdk --classic
+    - echo $GCR_KEY > /tmp/gcr_key.json;
+    - gcloud -q auth activate-service-account --key-file /tmp/gcr_key.json;
+    - gcloud -q config set project ${GCE_PROJECT}
+    - gcloud auth configure-docker
+    - export DOCKER_IMAGE_REPO=gcr.io/travis-ci-prod-services-1/gcloud-cleanup
     - export VERSION_VALUE=$(git describe --always --dirty --tags 2>/dev/null)
     - export DOCKER_DEST=$DOCKER_IMAGE_REPO:$VERSION_VALUE
     - docker build -t $DOCKER_DEST .
