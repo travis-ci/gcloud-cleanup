@@ -47,7 +47,5 @@ jobs:
     - docker build -t $DOCKER_DEST .
     - docker run --rm -it $DOCKER_DEST gcloud-cleanup --help
     - script/docker-push $DOCKER_DEST
-    addons:
-      apt:
-        packages:
-        - docker-ce
+    services:
+      - docker
