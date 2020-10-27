@@ -36,7 +36,7 @@ jobs:
   - name: docker
     if: type != 'pull_request'
     script:
-    - vault login -method=userpass username=$VAULT_USERNAME password=VAULT_PASSWORD
+    - vault login -method=userpass username=$VAULT_USERNAME password=VAULT_PASS
     - vault kv get -field=secret gcp/gcr-sa-key > /tmp/gcr_key.json;
     - gcloud -q auth activate-service-account --key-file /tmp/gcr_key.json;
     - gcloud -q config set project ${GCE_PROJECT}
